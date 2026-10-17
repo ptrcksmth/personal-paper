@@ -46,7 +46,9 @@ export default {
       // Outputs and admin, authenticated writes
       if (path.startsWith("/api/")) {
         if (!["POST", "PATCH"].includes(method)) return notFound();
-        if (!(await authorized(request, env))) return json({ error: "unauthorized" }, 401);
+        const isFlag = method === "POST" && /^\/api\/candidates\/\d+\/flag$/.test(path);
+        const ok = (await authorized(request, env)) || (isFlag && (await ownerCookieValid(request, env)));
+        if (!ok) return json({ error: "unauthorized" }, 401);
         const body = await request.json().catch(() => null);
         if (!body) return json({ error: "body must be JSON" }, 400);
         if (method === "POST" && (m = path.match(/^\/api\/profiles\/([a-z0-9-]+)$/))) return putProfile(env, m[1], body);
@@ -64,6 +66,7 @@ export default {
 
       // Pages and feeds, public reads
       if (method !== "GET" && method !== "HEAD") return notFound();
+      if (path === "/owner") return ownerLink(request, env, url);
       if (path === "/") return listingPage(env);
       if ((m = path.match(/^\/([a-z0-9-]+)\/archive\.json$/))) return archiveJson(env, m[1], url);
       if ((m = path.match(/^\/([a-z0-9-]+)\/direction\.json$/))) return directionJson(env, m[1], url);
@@ -101,6 +104,32 @@ async function authorized(request, env) {
   let diff = 0;
   for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
   return diff === 0;
+}
+
+async function sameSecret(given, expected) {
+  if (!given || !expected) return false;
+  const enc = new TextEncoder();
+  const [a, b] = await Promise.all([crypto.subtle.digest("SHA-256", enc.encode(given)), crypto.subtle.digest("SHA-256", enc.encode(expected))]);
+  const x = new Uint8Array(a), y = new Uint8Array(b);
+  let diff = 0; for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+function cookieValue(request, name) {
+  const c = request.headers.get("cookie") || "";
+  const m = c.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return m ? decodeURIComponent(m[1]) : "";
+}
+// The owner cookie: set once per device by visiting /owner?k=<OWNER_KEY>. Lets that browser flag candidates with one click.
+async function ownerCookieValid(request, env) {
+  return sameSecret(cookieValue(request, "pp_owner"), env.OWNER_KEY);
+}
+async function ownerLink(request, env, url) {
+  const k = url.searchParams.get("k") || "";
+  if (!(await sameSecret(k, env.OWNER_KEY))) return html(page("PersonalPaper", `<h1>Not a valid owner link</h1><p class="meta"><a href="/">PersonalPaper</a></p>`), 403);
+  const to = url.searchParams.get("to") || "/";
+  const headers = new Headers({ location: to.startsWith("/") ? to : "/" });
+  headers.append("set-cookie", `pp_owner=${encodeURIComponent(k)}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`);
+  return new Response(null, { status: 302, headers });
 }
 
 // ---------------------------------------------------------------------------
@@ -336,26 +365,20 @@ async function cutsPage(env, profile, date) {
     <p class="meta"><a href="/${p.id}/${date}">edition</a> · <a href="/${p.id}">latest</a> · <a href="/${p.id}/archive">archive</a></p>
     <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Cuts · ${esc(date)} · ${results.length} candidates</p></header>
     <p class="lede">Every candidate the editor considered for this edition, by the stage it left at. Flag anything you would have run; the editor reads flags at the start of its next run.</p>
-    <details class="tokenbox"><summary>Flagging needs the write token (stored only in this browser)</summary>
-      <input id="tok" type="password" placeholder="paste token" autocomplete="off"> <button id="savetok" type="button">save</button> <span id="tokstate" class="meta"></span></details>
+    <p id="flagmsg" class="meta" hidden>This browser is not signed in as the owner. Open your owner link once on this device, then flag again.</p>
     ${sections || "<p>No candidate record for this edition.</p>"}
     <script>
     (function(){
-      var K='pp_write_token';
-      function tok(){ try { return localStorage.getItem(K)||''; } catch(e){ return ''; } }
-      function state(){ var s=document.getElementById('tokstate'); if(s) s.textContent = tok() ? 'token saved' : 'no token'; }
-      var sv=document.getElementById('savetok'); if(sv) sv.addEventListener('click', function(){ try { localStorage.setItem(K, document.getElementById('tok').value.trim()); } catch(e){} state(); });
-      state();
+      var msg=document.getElementById('flagmsg');
       document.querySelectorAll('button.flag').forEach(function(b){
         b.addEventListener('click', function(){
           var li=b.closest('li'), id=li.getAttribute('data-id'), on = b.getAttribute('aria-pressed')!=='true';
-          var t=tok(); if(!t){ alert('Save the write token first (open the box above).'); return; }
-          var note = on ? (prompt('Why should this have run? (optional)')||'') : '';
-          if (on && note===null) return;
+          var note = '';
+          if (on) { var n = prompt('Why should this have run? (optional)'); if (n === null) return; note = n; }
           b.disabled=true;
-          fetch('/api/candidates/'+id+'/flag',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+t},body:JSON.stringify({flag:on,note:note})})
-            .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); b.setAttribute('aria-pressed', on?'true':'false'); b.textContent = on?'flagged':'flag'; li.classList.toggle('flagged', on); })
-            .catch(function(e){ alert('Flag failed: '+e.message); })
+          fetch('/api/candidates/'+id+'/flag',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({flag:on,note:note})})
+            .then(function(r){ if(r.status===401){ msg.hidden=false; msg.scrollIntoView({block:'center'}); throw new Error('not signed in'); } if(!r.ok) throw new Error('HTTP '+r.status); msg.hidden=true; b.setAttribute('aria-pressed', on?'true':'false'); b.textContent = on?'flagged':'flag'; li.classList.toggle('flagged', on); })
+            .catch(function(e){ if(e.message!=='not signed in') alert('Flag failed: '+e.message); })
             .then(function(){ b.disabled=false; });
         });
       });

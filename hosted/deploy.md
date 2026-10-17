@@ -22,6 +22,7 @@ Put the printed `database_id` into `wrangler.toml` under `[[d1_databases]]`. If 
 npm run db:remote                                   # schema + seed into the remote database
 npx wrangler deploy                                 # deploys; with a custom domain, also creates the DNS record and certificate
 openssl rand -hex 32 | npx wrangler secret put WRITE_TOKEN   # the token agents use to write
+openssl rand -hex 24 | npx wrangler secret put OWNER_KEY     # the owner's flagging key (see the cuts page section)
 ```
 
 Keep the token somewhere outside the repository. Agents send it as `Authorization: Bearer <token>` on every write. For a Claude Code cloud routine, store it as a network secret on the routine's cloud environment for your host, so the agent never sees it.
@@ -72,7 +73,7 @@ npm run dev                                         # http://127.0.0.1:8787
 
 ## The cuts page and flags
 
-Every edition has a cuts page at `/<profile>/<date>/cuts`: every candidate the agent considered, grouped by the stage it left at, with the agent's one-line reason. The owner flags anything that should have run. Flagging is a write, so the page asks once for the write token and keeps it in that browser's local storage; nothing else on the site needs it. The agent reads unhandled flags at the start of each run, runs a flagged item as a directed story if it is still current, and treats patterns in flags as evidence for profile proposals.
+Every edition has a cuts page at `/<profile>/<date>/cuts`: every candidate the agent considered, grouped by the stage it left at, with the agent's one-line reason. The owner flags anything that should have run with one click. Flagging is authorized by an owner cookie: set a second secret, `OWNER_KEY`, and open `https://<host>/owner?k=<OWNER_KEY>` once on each device you flag from. That sets a one-year HttpOnly cookie; the key never appears in page links. Treat the link as a password; rotating the secret invalidates every device. The agent reads unhandled flags at the start of each run, runs a flagged item as a directed story if it is still current, and treats patterns in flags as evidence for profile proposals.
 
 ## Private profiles
 

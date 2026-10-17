@@ -20,5 +20,6 @@ database_id = "30d2b763-cd45-4b62-a7dc-6accc59215f2"
 [observability]
 enabled = true
 
-# Secrets (not in this file): WRITE_TOKEN, set with `npx wrangler secret put WRITE_TOKEN`.
+# Secrets (not in this file): WRITE_TOKEN (agents' writes) and OWNER_KEY (the owner's one-click flagging),
+# each set with `npx wrangler secret put <NAME>`.
 # For local dev, put WRITE_TOKEN=... in .dev.vars (gitignored).
