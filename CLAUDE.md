@@ -1,8 +1,8 @@
 # personal-paper: working drive
 
-You are working in the personal-paper working drive. This file is the session contract; the drive map and conventions are imported below and govern everything here.
+You are working in the personal-paper working drive. This file is the session contract. The drive's working files (`_active-projects/`, `_explorations/`, `_readme.md`) are local and gitignored: they track the owner's work and are not part of the public release.
 
-@README.md
+The drive map and conventions are in `_readme.md`, a local file that is not in the repository. Read it first when it exists. In a checkout without it (a cloud routine, a contributor's clone), the public `README.md` describes the system and `agent/instructions.md` is what a run follows.
 
 ## Session behavior
 

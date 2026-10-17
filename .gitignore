@@ -7,3 +7,8 @@ node_modules/
 .dev.vars
 .secrets/
 out/
+
+# Working-drive files: local only, not part of the public release
+_active-projects/
+_explorations/
+_readme.md
