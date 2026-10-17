@@ -305,19 +305,20 @@ async function flagHandled(env, id, b) {
   return json({ id, handled: true });
 }
 
-async function runIdForEdition(env, profile, date) {
-  const e = await env.DB.prepare(`SELECT run_id FROM editions WHERE profile_id = ? AND date = ?`).bind(profile, date).first();
-  return e?.run_id || null;
+async function runIdsForDate(env, profile, date) {
+  const { results } = await env.DB.prepare(`SELECT id FROM runs WHERE profile_id = ? AND substr(started_at, 1, 10) = ? ORDER BY started_at`).bind(profile, date).all();
+  return results.map((r) => r.id);
 }
+function inList(ids) { return ids.map(() => "?").join(","); }
 
 async function cutsJson(env, profile, date) {
-  const run = await runIdForEdition(env, profile, date);
-  if (!run) return notFound();
+  const runs = await runIdsForDate(env, profile, date);
+  if (!runs.length) return notFound();
   const { results } = await env.DB.prepare(
-    `SELECT id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note, flag_handled_at, flag_result
-     FROM candidates WHERE run_id = ? ORDER BY stage, category, id`
-  ).bind(run).all();
-  return json({ profile, date, run_id: run, candidates: results });
+    `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note, flag_handled_at, flag_result
+     FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY stage, category, id`
+  ).bind(...runs).all();
+  return json({ profile, date, run_ids: runs, candidates: results });
 }
 
 async function flagsJson(env, profile, url) {
@@ -334,12 +335,12 @@ async function flagsJson(env, profile, url) {
 async function cutsPage(env, profile, date) {
   const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
   if (!p) return notFound();
-  const run = await runIdForEdition(env, profile, date);
-  if (!run) return html(page(`${p.name} · cuts`, `<p class="meta"><a href="/${p.id}">latest</a></p><h1>No edition for ${esc(date)}</h1>`), 404);
+  const runs = await runIdsForDate(env, profile, date);
+  if (!runs.length) return html(page(`${p.name} · cuts`, `<p class="meta"><a href="/${p.id}">latest</a></p><h1>No edition for ${esc(date)}</h1>`), 404);
   const { results } = await env.DB.prepare(
-    `SELECT id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note
-     FROM candidates WHERE run_id = ? ORDER BY category, id`
-  ).bind(run).all();
+    `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note
+     FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY category, id`
+  ).bind(...runs).all();
   const labels = { kept: "Kept", "not-kept": "Read, not kept", "not-shortlisted": "Not shortlisted", deprioritized: "Deprioritized", repeat: "Repeats", collapsed: "Collapsed into another candidate" };
   const order = ["not-kept", "not-shortlisted", "deprioritized", "repeat", "collapsed", "kept"];
   const groups = Object.fromEntries(order.map((s) => [s, results.filter((c) => c.stage === s)]));
@@ -353,7 +354,7 @@ async function cutsPage(env, profile, date) {
     `<section><h2>${labels[s]} <span class="count">${groups[s].length}</span></h2><ul class="cuts">${groups[s].map(row).join("")}</ul></section>`).join("");
   const body = `
     <p class="meta"><a href="/${p.id}/${date}">edition</a> · <a href="/${p.id}">latest</a> · <a href="/${p.id}/archive">archive</a></p>
-    <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Cuts · ${esc(date)} · ${results.length} candidates</p></header>
+    <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Cuts · ${esc(date)} · ${results.length} candidates${runs.length > 1 ? ` · ${runs.length} runs` : ""}</p></header>
     <p class="lede">Every candidate the editor considered for this edition, by the stage it left at. Flag anything you would have run; the editor reads flags at the start of its next run.</p>
     <p id="flagmsg" class="meta" hidden>This browser is not signed in as the owner. Open your owner link once on this device, then flag again.</p>
     ${sections || "<p>No candidate record for this edition.</p>"}
@@ -444,7 +445,9 @@ async function editionPage(env, profile, date) {
   const [nav, def, st] = await Promise.all([
     env.DB.prepare(`SELECT (SELECT MAX(date) FROM editions WHERE profile_id = ?1 AND date < ?2) AS prev, (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`).bind(profile, e.date).first(),
     env.DB.prepare(`SELECT definition FROM profile_versions WHERE profile_id = ? ORDER BY version DESC LIMIT 1`).bind(profile).first(),
-    env.DB.prepare(`SELECT * FROM stories WHERE run_id = ? ORDER BY newsworthiness DESC, created_at ASC`).bind(e.run_id).all(),
+    env.DB.prepare(`SELECT s.* FROM stories s JOIN runs r ON r.id = s.run_id
+                    WHERE s.profile_id = ?1 AND substr(r.started_at, 1, 10) = ?2
+                    ORDER BY s.newsworthiness DESC, s.created_at ASC`).bind(profile, e.date).all(),
   ]);
   const catName = Object.fromEntries(((safeJson(def?.definition) || {}).categories || []).map((c) => [c.id, c.name]));
   const stories = st.results.map(parseStory);
@@ -531,7 +534,7 @@ async function archivePage(env, profile) {
   if (!p) return notFound();
   const { results } = await env.DB.prepare(
     `SELECT e.date, e.today, e.created_at, r.status,
-            (SELECT COUNT(*) FROM stories s WHERE s.run_id = e.run_id) AS story_count
+            (SELECT COUNT(*) FROM stories s JOIN runs r2 ON r2.id = s.run_id WHERE s.profile_id = e.profile_id AND substr(r2.started_at, 1, 10) = e.date) AS story_count
      FROM editions e LEFT JOIN runs r ON r.id = e.run_id
      WHERE e.profile_id = ? ORDER BY e.date DESC`
   ).bind(profile).all();

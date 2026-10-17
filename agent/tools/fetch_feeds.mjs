@@ -9,6 +9,19 @@
 // Exit code 0 even when some feeds fail; failures are in the output for the run log.
 
 import { mkdirSync, writeFileSync } from "node:fs";
+
+// Cloud sandboxes route egress through a proxy that Node's fetch ignores unless told. If a proxy is
+// configured and Node has not been pointed at it, re-run this script with the proxy and the CA bundle set.
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+if ((process.env.HTTPS_PROXY || process.env.https_proxy) && !process.env.NODE_USE_ENV_PROXY) {
+  const ca = process.env.NODE_EXTRA_CA_CERTS || process.env.SSL_CERT_FILE || process.env.CURL_CA_BUNDLE ||
+    ["/root/.ccr/ca-bundle.crt", "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/cert.pem", "/etc/pki/tls/certs/ca-bundle.crt"].find((f) => existsSync(f));
+  const env = { ...process.env, NODE_USE_ENV_PROXY: "1", ...(ca ? { NODE_EXTRA_CA_CERTS: ca } : {}) };
+  const r = spawnSync(process.execPath, process.argv.slice(1), { stdio: "inherit", env });
+  process.exit(r.status ?? 1);
+}
+
 import { dirname } from "node:path";
 
 const args = process.argv.slice(2);
