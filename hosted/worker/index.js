@@ -2,7 +2,29 @@
 // One Worker: registry (public reads), outputs (authenticated writes), pages and feeds (public reads).
 // Storage is D1, bound as env.DB. Schema in hosted/schema.sql.
 
-import { marked } from "marked";
+import { marked, Marked } from "marked";
+
+// Headings get stable ids so a table of contents can link to them.
+function slugify(s) {
+  return String(s).toLowerCase().replace(/<[^>]+>/g, "").replace(/&[a-z]+;/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+}
+function renderWithToc(md) {
+  const toc = [];
+  const seen = new Map();
+  const renderer = {
+    heading({ tokens, depth }) {
+      const text = this.parser.parseInline(tokens);
+      let id = slugify(text) || "section";
+      const n = (seen.get(id) || 0) + 1; seen.set(id, n); if (n > 1) id = `${id}-${n}`;
+      if (depth === 2) toc.push({ id, text, stories: [] });
+      else if (depth === 3 && toc.length) toc[toc.length - 1].stories.push({ id, text });
+      return `<h${depth} id="${id}">${text}</h${depth}>\n`;
+    },
+  };
+  const m = new Marked({ renderer });
+  const html = m.parse(md);
+  return { html, toc };
+}
 
 // ---------------------------------------------------------------------------
 // Routing
@@ -43,7 +65,7 @@ export default {
       if ((m = path.match(/^\/([a-z0-9-]+)\/archive\.json$/))) return archiveJson(env, m[1], url);
       if ((m = path.match(/^\/([a-z0-9-]+)\/direction\.json$/))) return directionJson(env, m[1], url);
       if ((m = path.match(/^\/([a-z0-9-]+)\/runs\.json$/))) return runsJson(env, m[1]);
-      if ((m = path.match(/^\/([a-z0-9-]+)\/feed\.xml$/))) return feedXml(env, m[1], url);
+      if ((m = path.match(/^\/([a-z0-9-]+)\/archive$/))) return archivePage(env, m[1]);
       if ((m = path.match(/^\/([a-z0-9-]+)\/(\d{4}-\d{2}-\d{2})$/))) return editionPage(env, m[1], m[2]);
       if ((m = path.match(/^\/([a-z0-9-]+)$/))) return editionPage(env, m[1], null);
       return notFound();
@@ -258,7 +280,7 @@ async function listingPage(env) {
       <p>${esc(p.description)}</p>
       <p class="meta">${p.latest ? `Latest edition <a href="/${p.id}/${p.latest}">${p.latest}</a>` : "No editions yet"}
         · ${p.status ? `last run ${esc(p.status)} at ${esc(p.last_run)}` : "no runs yet"}
-        · definition v${p.current_version} · <a href="/registry/${p.id}.json">registry</a> · <a href="/${p.id}/feed.xml">RSS</a></p>
+        · definition v${p.current_version} · <a href="/${p.id}/archive">archive</a> · <a href="/registry/${p.id}.json">registry</a></p>
     </li>`).join("");
   return html(page("PersonalPaper", `<h1>PersonalPaper</h1><p class="lede">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
 }
@@ -274,37 +296,52 @@ async function editionPage(env, profile, date) {
     `SELECT (SELECT MAX(date) FROM editions WHERE profile_id = ?1 AND date < ?2) AS prev,
             (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`
   ).bind(profile, e.date).first();
-  const body = marked.parse(e.body_md);
-  const todayList = safeJson(e.today);
-  const today = Array.isArray(todayList) && todayList.length
-    ? `<section class="today"><h2>Today</h2><ol>${todayList.map((t) => `<li>${esc(typeof t === "string" ? t : t.headline || "")}</li>`).join("")}</ol></section>`
+  const { html: body, toc } = renderWithToc(e.body_md);
+  const topList = safeJson(e.today);
+  // Top stories: link each pointer to its story heading when the headline matches one in the body.
+  const headingByText = new Map(toc.flatMap((c) => c.stories.map((s) => [s.text, s.id])));
+  const top = Array.isArray(topList) && topList.length
+    ? `<section class="top"><h2>Top stories</h2><ol>${topList.map((t) => {
+        const h = typeof t === "string" ? t : t.headline || "";
+        const id = headingByText.get(esc(h)) || headingByText.get(h);
+        return `<li>${id ? `<a href="#${id}">${esc(h)}</a>` : esc(h)}</li>`;
+      }).join("")}</ol></section>`
+    : "";
+  const contents = toc.length
+    ? `<nav class="toc"><h2>In this edition</h2>${toc.map((c) => `<p class="toc-cat"><a href="#${c.id}">${c.text}</a></p><ul>${c.stories.map((s) => `<li><a href="#${s.id}">${s.text}</a></li>`).join("")}</ul>`).join("")}</nav>`
     : "";
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const links = [
     nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
     `<a href="/${profile}">latest</a>`,
     nav.next ? `<a href="/${profile}/${nav.next}">${nav.next} →</a>` : "",
-    `<a href="/${profile}/feed.xml">RSS</a>`, `<a href="/">all profiles</a>`,
+    `<a href="/${profile}/archive">archive</a>`, `<a href="/">all profiles</a>`,
   ].filter(Boolean).join(" · ");
   return html(page(`${p.name} · ${e.date}`,
     `<p class="meta">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(e.date)}</p></header>
-     ${today}<article class="edition">${body}</article>${closing}<p class="meta">${links}</p>`));
+     ${top}${contents}<article class="edition">${body}</article>${closing}<p class="meta">${links}</p>`));
 }
 
-async function feedXml(env, profile, url) {
-  const p = await env.DB.prepare(`SELECT id, name, description FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+async function archivePage(env, profile) {
+  const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
   if (!p) return notFound();
   const { results } = await env.DB.prepare(
-    `SELECT date, today, created_at FROM editions WHERE profile_id = ? ORDER BY date DESC LIMIT 30`
+    `SELECT e.date, e.today, e.created_at, r.status,
+            (SELECT COUNT(*) FROM stories s WHERE s.run_id = e.run_id) AS story_count
+     FROM editions e LEFT JOIN runs r ON r.id = e.run_id
+     WHERE e.profile_id = ? ORDER BY e.date DESC`
   ).bind(profile).all();
-  const base = `${url.protocol}//${url.host}`;
   const items = results.map((e) => {
-    const today = safeJson(e.today);
-    const desc = Array.isArray(today) ? today.map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).join(" · ") : "";
-    return `<item><title>${escXml(p.name)} · ${e.date}</title><link>${base}/${p.id}/${e.date}</link><guid isPermaLink="true">${base}/${p.id}/${e.date}</guid><pubDate>${new Date(e.created_at).toUTCString()}</pubDate><description>${escXml(desc)}</description></item>`;
+    const top = safeJson(e.today);
+    const heads = Array.isArray(top) ? top.map((t) => esc(typeof t === "string" ? t : t.headline || "")).filter(Boolean) : [];
+    return `<li class="profile"><h2><a href="/${p.id}/${e.date}">${esc(e.date)}</a></h2>
+      <p class="meta">${e.story_count} stories${e.status ? ` · run ${esc(e.status)}` : ""}</p>
+      ${heads.length ? `<ul class="heads">${heads.map((h) => `<li>${h}</li>`).join("")}</ul>` : ""}</li>`;
   }).join("");
-  const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>${escXml(p.name)}</title><link>${base}/${p.id}</link><description>${escXml(p.description)}</description>${items}</channel></rss>`;
-  return new Response(xml, { headers: { "content-type": "application/rss+xml; charset=utf-8", "cache-control": "public, max-age=300" } });
+  return html(page(`${p.name} · archive`,
+    `<p class="meta"><a href="/${p.id}">latest</a> · <a href="/">all profiles</a></p>
+     <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Archive · ${results.length} edition${results.length === 1 ? "" : "s"}</p></header>
+     <ul class="profiles">${items || "<li>No editions yet.</li>"}</ul>`));
 }
 
 // ---------------------------------------------------------------------------
@@ -324,12 +361,13 @@ h3{font-size:1.1rem;margin:1.2rem 0 .2rem} .meta,.date{color:var(--muted);font:1
 .masthead{border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem} .lede{color:var(--muted)}
 .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
 .closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted)}
-.today{margin:1rem 0 1.5rem} .today h2{margin-top:0} .today ol{padding-left:1.4rem;margin:.3rem 0} .today li{margin:.25rem 0;font-weight:600}
+.top{margin:1rem 0 1.2rem} .top h2{margin-top:0} .top ol{padding-left:1.4rem;margin:.3rem 0} .top li{margin:.25rem 0;font-weight:600}
+.toc{margin:0 0 2rem;padding:.6rem 1rem;border:1px solid var(--line);border-radius:6px;font:15px/1.5 -apple-system,system-ui,sans-serif} .toc h2{margin:.2rem 0 .4rem;border:0;font-size:1rem} .toc-cat{margin:.5rem 0 .1rem;font-weight:600} .toc ul{margin:0 0 .2rem;padding-left:1.2rem} .toc li{margin:.1rem 0} .toc a{text-decoration:none}
+.heads{margin:.2rem 0 0;padding-left:1.2rem;color:var(--muted);font-size:.95rem}
 .edition p{margin:.4rem 0 .9rem} .edition ul{padding-left:1.2rem}
 </style></head><body><main>${body}</main></body></html>`;
 }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-function escXml(s) { return esc(s); }
 function json(obj, status = 200) {
   return new Response(JSON.stringify(obj, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": status === 200 ? "public, max-age=60" : "no-store" } });
 }

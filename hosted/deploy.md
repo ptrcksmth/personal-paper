@@ -63,7 +63,7 @@ npm run dev                                         # http://127.0.0.1:8787
 | GET | `/<profile>/archive.json?days=14` | no | recent stories, for repeat checks and stacking |
 | GET | `/<profile>/direction.json?unhandled=1` | no | direction entries |
 | GET | `/<profile>/runs.json` | no | recent run logs |
-| GET | `/`, `/<profile>`, `/<profile>/<date>`, `/<profile>/feed.xml` | no | pages and RSS |
+| GET | `/`, `/<profile>`, `/<profile>/<date>`, `/<profile>/archive` | no | listing, latest edition, dated edition, archive index |
 
 ## Private profiles
 

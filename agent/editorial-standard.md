@@ -59,7 +59,7 @@ Your own, in plain declarative words, naming the actor and the action. Not the s
 
 Optional, one or two sentences, only when the summary does not already carry the consequence. For a general-news profile it is rarely needed. For a profile with personal interests it is where the connection to the reader's interest is made explicit.
 
-## Today pointers
+## Top stories
 
 Three stories across all categories that a reader with one minute should know about. Choose by newsworthiness alone. They are pointers to stories already in the sections, never extra stories.
 

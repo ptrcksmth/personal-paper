@@ -90,7 +90,7 @@ For each shortlisted candidate, find and read the best coverage:
 2. Fetch and read the chosen piece. If it is paywalled or thin, fetch one alternative. Budget: two fetches per candidate.
 3. Record every piece consulted: publisher, link, whether you read it in full, whether it is behind a paywall. This becomes the story's `coverage`.
 
-If a subagent facility exists, give each candidate to a subagent on a cheaper model with this step's text and the candidate, and have it return the coverage record and a short factual digest. Run them in parallel.
+If a subagent facility exists, give each category's shortlist to a subagent on a cheaper model with `agent/cover-brief.md` and the candidates, and have it return the coverage record and a short factual digest per candidate in the brief's JSON shape. Run the categories in parallel.
 
 If nothing readable is found, the story may still run from headline and description, marked `basis: "headline-only"`. Two things learned from the first run: pages on nytimes.com and economist.com cannot be fetched from the agent's environment, so do not spend a fetch on them; and a same-day story from an agenda source often has no accessible coverage yet, so expect headline-only marks to cluster on the freshest stories.
 
@@ -101,10 +101,10 @@ Facts a subagent labels as coming from search snippets rather than a page it rea
 Read `agent/editorial-standard.md` if you have not. Then, for each category:
 
 1. Score each read candidate on two axes separately: `newsworthiness` (0 to 1) and `relevance` (0 to 1, fit to its category). Never fold one into the other.
-2. Select the top two or three by newsworthiness. Omit the category if nothing is significant. Do not pad.
+2. Select the top two or three by newsworthiness, or up to the category's `max_stories` if the profile sets one. Omit the category if nothing is significant. Do not pad. Apply the profile's `category_scope_notes` when ranking within a category.
 3. Write each story as the standard's story form: your own headline, a two-to-four sentence summary written from what you read, `why_it_matters` only when the summary does not already say it.
 
-Choose three *Today* pointers across all categories: the day's most significant stories, as headlines.
+Choose three *Top stories* across all categories: the day's most significant stories, as headlines. They go in the edition's `today` list and the page renders them at the top, linked to their stories.
 
 Write `out/stories.json`:
 
@@ -120,7 +120,7 @@ Write `out/stories.json`:
 }]}
 ```
 
-Write `out/edition.json` with the edition body in markdown. The body holds the sections only; the page renders *Today* from the `today` list.
+Write `out/edition.json` with the edition body in markdown. The body holds the sections only; the page renders *Top stories* from the `today` list and builds a table of contents from the headings.
 
 ```json
 {"profile_id": "<profile>", "date": "<date>", "run_id": "<run-id>",
@@ -170,7 +170,7 @@ If a step fails in a way you cannot recover, still close the run with `failed` a
 | Coverage searches | one per shortlisted candidate, plus one retry |
 | Fetches | two per shortlisted candidate |
 | Shortlist | four per category |
-| Stories kept | three per category |
+| Stories kept | three per category, or the category's `max_stories` |
 | Wall clock | aim to finish within 40 minutes |
 
 If a budget is hit, stop that step, record it in the log, and continue. An edition on time with fewer stories beats a late one.

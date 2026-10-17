@@ -14,6 +14,9 @@
 
 ## SFL
 
+- **Cuts page and flags, the eval mechanism** (owner, 2026-10-17: "the most substantial change here"; held for a separate effort): record every candidate's exit stage and reason in a table; a `/<profile>/<date>/cuts` page listing them; the owner flags the ones he would have run, as direction entries; weekly review of flags by stage. First step: the candidates table in the schema and the stage reasons in step 4 of the instructions.
+- **Formatting pass: images, fonts, layout** (owner, 2026-10-17): preview images from the coverage page's metadata as credited thumbnails with a fallback; font and layout improvements for scanning on the iPad. Held until after the cuts page.
+- **Edition increment for multiple runs per day** (owner, 2026-10-17): keep date URLs; add an incrementor when a second edition is produced on the same day.
 - **Weekend mode for profiles** (surfaced 2026-10-17, first edition, owner's observation): the Economist's weekly batch is analysis and lands Thursday and Friday; weekend NYT feeds are thin on hard news. A profile could define a weekend edition with fewer stories and analysis welcome. First step: a `cadence` block in the profile schema.
 - **One-day hold for same-day agenda stories** (surfaced 2026-10-17, first edition): same-day NYT stories run headline-only because nothing else has covered them; a profile option to hold them a day would trade timeliness for coverage. 10 of 27 stories in the first edition.
 - **MCP connector for the hosted environment** (surfaced 2026-10-17, architecture session): expose registry, outputs, and direction as tools with the credential held by claude.ai; documented as possible for routines. First step: when a second kind of agent needs the environment, or the write API grows. PRD sections 8.6 and 14.
@@ -28,6 +31,7 @@
 
 ## Done
 
+- ✓ 2026-10-17 Owner's first-edition review applied: RSS removed; Top stories block linked to anchors; table of contents per edition; archive index per profile at /<profile>/archive; profile v3 gives Business and Finance and economics up to four stories with the AI build-out, debt loads and market exposure named in scope; coverage brief moved to agent/cover-brief.md; closing-block count corrected.
 - ✓ 2026-10-17 Step 3, first edition: agent/instructions.md and agent/editorial-standard.md written; tools fetch_feeds.mjs and pp.mjs; profile v2 (Economist window 7 days); first edition run from this session with 12 Sonnet coverage subagents, 27 stories in 12 categories, live at https://personalpaper.org/global-us-news/2026-10-17; run log closed ok. Lessons folded into the instructions: discovery queries, unfetchable agenda hosts, snippet facts.
 - ✓ 2026-10-17 Step 1, hosted environment: D1 `personal-paper` created and seeded; Worker deployed at https://personalpaper.org (custom domain, certificate issued) and personal-paper.patrick-e68.workers.dev; registry reads, authenticated writes (401 without token), idempotent story insert, pages and RSS all verified locally and on the domain; write token in `.secrets/write-token`, gitignored; deploy guide at hosted/deploy.md
 - ✓ 2026-10-17 Architecture locked (PRD section 8): agent as cloud routine, hosted environment on personalpaper.org, standalone repository; write path by network secret; diagrams at docs/sysarch-diagrams.html (promoted to docs by the owner 2026-10-17)
