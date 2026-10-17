@@ -477,9 +477,16 @@ async function editionPage(env, profile, date) {
     `<a href="/${profile}/${e.date}/cuts">cuts</a>`, `<a href="/${profile}/archive">archive</a>`, `<a href="/">all profiles</a>`,
   ].filter(Boolean).join(" · ");
   const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const topStories = topList.map((t) => (t.story_id && byId[t.story_id]) || stories.find((x) => x.headline === t.headline)).filter(Boolean);
+  const share = {
+    title: `${p.name} · ${longDate}`,
+    description: topList.map((t, i) => `${i + 1}. ${t.headline || ""}`).join("  "),
+    url: `https://personalpaper.org/${profile}/${e.date}`,
+    image: (topStories.find((x) => x.image_url) || {}).image_url || null,
+  };
   return html(page(`${p.name} · ${e.date}`,
     `<p class="meta nav">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
-     ${top}${toc}${sections}${closing}<p class="meta nav">${links}</p>`));
+     ${top}${toc}${sections}${closing}<p class="meta nav">${links}</p>`, share));
 }
 
 async function archivePage(env, profile) {
@@ -508,9 +515,15 @@ async function archivePage(env, profile) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function page(title, body) {
+function page(title, body, share) {
+  const og = share ? `
+<meta property="og:type" content="article"><meta property="og:site_name" content="PersonalPaper">
+<meta property="og:title" content="${esc(share.title)}"><meta property="og:description" content="${esc(share.description)}">
+<meta property="og:url" content="${esc(share.url)}">${share.image ? `<meta property="og:image" content="${esc(share.image)}">` : ""}
+<meta name="twitter:card" content="${share.image ? "summary_large_image" : "summary"}"><meta name="twitter:title" content="${esc(share.title)}"><meta name="twitter:description" content="${esc(share.description)}">${share.image ? `<meta name="twitter:image" content="${esc(share.image)}">` : ""}
+<meta name="description" content="${esc(share.description)}">` : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
+<title>${esc(title)}</title>${og}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
 <style>
 :root{--bg:#f6f4ef;--panel:#fdfcfa;--stripe:#ece8e0;--fg:#1e1c19;--muted:#6b665d;--line:#d9d4cb;--accent:#8a2a1b;--accent-soft:#f1e3df;--ui:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
