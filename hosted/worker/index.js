@@ -2,28 +2,10 @@
 // One Worker: registry (public reads), outputs (authenticated writes), pages and feeds (public reads).
 // Storage is D1, bound as env.DB. Schema in hosted/schema.sql.
 
-import { marked, Marked } from "marked";
+import { marked } from "marked";
 
-// Headings get stable ids so a table of contents can link to them.
 function slugify(s) {
-  return String(s).toLowerCase().replace(/<[^>]+>/g, "").replace(/&[a-z]+;/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
-}
-function renderWithToc(md) {
-  const toc = [];
-  const seen = new Map();
-  const renderer = {
-    heading({ tokens, depth }) {
-      const text = this.parser.parseInline(tokens);
-      let id = slugify(text) || "section";
-      const n = (seen.get(id) || 0) + 1; seen.set(id, n); if (n > 1) id = `${id}-${n}`;
-      if (depth === 2) toc.push({ id, text, stories: [] });
-      else if (depth === 3 && toc.length) toc[toc.length - 1].stories.push({ id, text });
-      return `<h${depth} id="${id}">${text}</h${depth}>\n`;
-    },
-  };
-  const m = new Marked({ renderer });
-  const html = m.parse(md);
-  return { html, toc };
+  return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
 }
 
 // ---------------------------------------------------------------------------
@@ -441,34 +423,46 @@ async function listingPage(env) {
         · ${p.status ? `last run ${esc(p.status)} at ${esc(p.last_run)}` : "no runs yet"}
         · definition v${p.current_version} · <a href="/${p.id}/archive">archive</a> · <a href="/registry/${p.id}.json">registry</a></p>
     </li>`).join("");
-  return html(page("PersonalPaper", `<h1>PersonalPaper</h1><p class="lede">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
+  return html(page("PersonalPaper", `<h1>PersonalPaper</h1><p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
 }
 
 async function editionPage(env, profile, date) {
-  const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+  const p = await env.DB.prepare(`SELECT id, name, current_version FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
   if (!p) return notFound();
   const e = date
     ? await env.DB.prepare(`SELECT * FROM editions WHERE profile_id = ? AND date = ?`).bind(profile, date).first()
     : await env.DB.prepare(`SELECT * FROM editions WHERE profile_id = ? ORDER BY date DESC LIMIT 1`).bind(profile).first();
   if (!e) return html(page(p.name, `<p class="meta"><a href="/">PersonalPaper</a></p><h1>${esc(p.name)}</h1><p>No edition yet.</p>`), 404);
-  const nav = await env.DB.prepare(
-    `SELECT (SELECT MAX(date) FROM editions WHERE profile_id = ?1 AND date < ?2) AS prev,
-            (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`
-  ).bind(profile, e.date).first();
-  const { html: body, toc } = renderWithToc(e.body_md);
-  const topList = safeJson(e.today);
-  // Top stories: link each pointer to its story heading when the headline matches one in the body.
-  const headingByText = new Map(toc.flatMap((c) => c.stories.map((s) => [s.text, s.id])));
-  const top = Array.isArray(topList) && topList.length
-    ? `<section class="top"><h2>Top stories</h2><ol>${topList.map((t) => {
-        const h = typeof t === "string" ? t : t.headline || "";
-        const id = headingByText.get(esc(h)) || headingByText.get(h);
-        return `<li>${id ? `<a href="#${id}">${esc(h)}</a>` : esc(h)}</li>`;
-      }).join("")}</ol></section>`
-    : "";
-  const contents = toc.length
-    ? `<nav class="toc"><h2>In this edition</h2>${toc.map((c) => `<p class="toc-cat"><a href="#${c.id}">${c.text}</a></p><ul>${c.stories.map((s) => `<li><a href="#${s.id}">${s.text}</a></li>`).join("")}</ul>`).join("")}</nav>`
-    : "";
+  const [nav, def, st] = await Promise.all([
+    env.DB.prepare(`SELECT (SELECT MAX(date) FROM editions WHERE profile_id = ?1 AND date < ?2) AS prev, (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`).bind(profile, e.date).first(),
+    env.DB.prepare(`SELECT definition FROM profile_versions WHERE profile_id = ? ORDER BY version DESC LIMIT 1`).bind(profile).first(),
+    env.DB.prepare(`SELECT * FROM stories WHERE run_id = ? ORDER BY newsworthiness DESC, created_at ASC`).bind(e.run_id).all(),
+  ]);
+  const catName = Object.fromEntries(((safeJson(def?.definition) || {}).categories || []).map((c) => [c.id, c.name]));
+  const stories = st.results.map(parseStory);
+  // Category order: as the agent ordered the markdown body (## headings), then any category it did not mention.
+  const bodyOrder = [...String(e.body_md || "").matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
+  const nameToId = Object.fromEntries(Object.entries(catName).map(([id, n]) => [n, id]));
+  const catsInBody = bodyOrder.map((n) => nameToId[n]).filter(Boolean);
+  const allCats = [...new Set([...catsInBody, ...stories.map((s) => s.category)])];
+  const groups = allCats.map((id) => ({ id, name: catName[id] || id, stories: stories.filter((s) => s.category === id) })).filter((g) => g.stories.length);
+  const byId = Object.fromEntries(stories.map((s) => [s.id, s]));
+  const firstSentence = (t) => { const m = String(t || "").match(/^.*?[.!?](?=\s|$)/); return m ? m[0] : String(t || ""); };
+  const publisherOf = (s) => { const c = (s.coverage || []).find((x) => x.url === s.url); return (c?.publisher || s.surfaced_by || "").replace(/\s*\(via [^)]*\)/, ""); };
+  const fmtDate = (d) => d ? new Date(String(d).slice(0, 10) + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }) : "";
+  const metaLine = (s) => `<span class="meta">${esc(publisherOf(s))}${s.published_at ? ` · ${esc(fmtDate(s.published_at))}` : ""} · <a href="${esc(s.url)}">read</a>${s.basis === "headline-only" ? ' · <span class="badge">headline only</span>' : ""}${s.directed ? ' · <span class="badge">directed</span>' : ""}</span>`;
+  const alsoLine = (s) => { const others = (s.coverage || []).filter((c) => c.url !== s.url); return others.length ? `<div class="also">Also: ${others.map((c) => `<a href="${esc(c.url)}">${esc(c.publisher)}${c.paywalled ? " (subscriber)" : ""}</a>`).join(" · ")}</div>` : ""; };
+  const sid = (s) => "s-" + slugify(s.id);
+  const topList = (safeJson(e.today) || []).map((t) => typeof t === "string" ? { headline: t } : t);
+  const top = topList.length ? `<section class="top"><h2>Top stories</h2><ol>${topList.map((t) => {
+      const s = t.story_id && byId[t.story_id] ? byId[t.story_id] : stories.find((x) => x.headline === t.headline);
+      const h = esc(t.headline || s?.headline || "");
+      return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(catName[s.category] || s.category)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
+    }).join("")}</ol></section>` : "";
+  const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => `<p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${g.stories.length}</span></p><ul>${g.stories.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul>`).join("")}</nav>` : "";
+  const sections = groups.map((g) => `<section class="cat-section"><h2 class="cat" id="cat-${g.id}">${esc(g.name)}</h2>${g.stories.map((s) => `
+      <details class="story" id="${sid(s)}"><summary><span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
+      <div class="body">${metaLine(s)}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`).join("")}</section>`).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const links = [
     nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
@@ -476,9 +470,10 @@ async function editionPage(env, profile, date) {
     nav.next ? `<a href="/${profile}/${nav.next}">${nav.next} →</a>` : "",
     `<a href="/${profile}/${e.date}/cuts">cuts</a>`, `<a href="/${profile}/archive">archive</a>`, `<a href="/">all profiles</a>`,
   ].filter(Boolean).join(" · ");
+  const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
   return html(page(`${p.name} · ${e.date}`,
-    `<p class="meta">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(e.date)}</p></header>
-     ${top}${contents}<article class="edition">${body}</article>${closing}<p class="meta">${links}</p>`));
+    `<p class="meta nav">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
+     ${top}${toc}${sections}${closing}<p class="meta nav">${links}</p>`));
 }
 
 async function archivePage(env, profile) {
@@ -510,23 +505,45 @@ async function archivePage(env, profile) {
 function page(title, body) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
 <style>
-:root{--bg:#fbfaf7;--fg:#1c1b19;--muted:#6b665d;--line:#ddd8cf;--link:#1f5f8b}
-@media (prefers-color-scheme:dark){:root{--bg:#17171a;--fg:#ebe8e1;--muted:#a09b92;--line:#34343a;--link:#7fb3dc}}
-body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.55 Georgia,"Times New Roman",serif}
-main{max-width:42rem;margin:0 auto;padding:1.5rem 1rem 4rem}
-a{color:var(--link)} h1{font-size:1.9rem;line-height:1.15;margin:.2rem 0} h2{font-size:1.25rem;margin:1.8rem 0 .4rem;border-bottom:1px solid var(--line);padding-bottom:.2rem}
-h3{font-size:1.1rem;margin:1.2rem 0 .2rem} .meta,.date{color:var(--muted);font:14px/1.5 -apple-system,system-ui,sans-serif}
-.masthead{border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem} .lede{color:var(--muted)}
-.profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
-.closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted)}
-.top{margin:1rem 0 1.2rem} .top h2{margin-top:0} .top ol{padding-left:1.4rem;margin:.3rem 0} .top li{margin:.25rem 0;font-weight:600}
-.toc{margin:0 0 2rem;padding:.6rem 1rem;border:1px solid var(--line);border-radius:6px;font:15px/1.5 -apple-system,system-ui,sans-serif} .toc h2{margin:.2rem 0 .4rem;border:0;font-size:1rem} .toc-cat{margin:.5rem 0 .1rem;font-weight:600} .toc ul{margin:0 0 .2rem;padding-left:1.2rem} .toc li{margin:.1rem 0} .toc a{text-decoration:none}
+:root{--bg:#f6f4ef;--panel:#fdfcfa;--fg:#1e1c19;--muted:#6b665d;--line:#d9d4cb;--accent:#8a2a1b;--accent-soft:#f1e3df;--ui:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#151517;--panel:#1d1d20;--fg:#e8e5df;--muted:#9d978e;--line:#2f2e32;--accent:#e07a5f;--accent-soft:#3a2420}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+main{max-width:44rem;margin:0 auto;padding:1.2rem 1rem 5rem}
+a{color:inherit} h1{font-size:1.5rem;line-height:1.2;margin:.2rem 0;font-weight:700}
+h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
+.meta,.date{color:var(--muted);font-size:14px} .meta a{color:var(--accent);text-decoration:none} .nav{margin:.2rem 0}
+.masthead{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem}
+.badge{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px;vertical-align:middle}
+.kicker{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-top:.15rem}
+.lede{display:block;color:var(--muted);font-size:.95em;line-height:1.45;margin-top:.1rem}
+.top{margin:1rem 0 1.4rem;border:1px solid var(--line);border-left:4px solid var(--accent);background:var(--panel);border-radius:0 8px 8px 0;padding:.7rem 1rem .4rem}
+.top h2{margin:0 0 .3rem;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.top ol{margin:0;padding:0;list-style:none;counter-reset:top}
+.top li{counter-increment:top;position:relative;padding:.65rem 0 .65rem 2rem;border-top:1px solid var(--line)}
+.top li:first-child{border-top:0}
+.top li::before{content:counter(top);position:absolute;left:0;top:.6rem;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--fg);color:var(--bg);font-size:13px;font-weight:700;display:grid;place-items:center}
+.top li a{font-weight:700;text-decoration:none;line-height:1.3;display:block}
+.toc{margin:0 0 1.6rem;padding:.6rem 1rem .4rem;border:1px solid var(--line);border-radius:8px;font-size:15px}
+.toc h2{margin:.1rem 0 .3rem;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.toc-cat{margin:.55rem 0 .1rem;font-weight:700} .toc ul{margin:0 0 .2rem;padding-left:1.1rem} .toc li{margin:.12rem 0} .toc a{text-decoration:none} .count{color:var(--muted);font-weight:400;font-size:13px}
+h2.cat{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.8rem 0 .2rem;display:flex;justify-content:space-between}
+details.story{border-top:1px solid var(--line)} details.story:last-child{border-bottom:1px solid var(--line)}
+details.story summary{list-style:none;cursor:pointer;display:grid;gap:.15rem;padding:.7rem .2rem .7rem 0}
+details.story summary::-webkit-details-marker{display:none}
+details.story summary .h{font-weight:700;line-height:1.3} details.story summary .l{color:var(--muted);font-size:.95em;line-height:1.45}
+details.story[open] summary .l{display:none} details.story[open] summary .h{color:var(--accent)}
+details.story .body{padding:0 0 1rem} details.story .body p{margin:.35rem 0 .5rem} .why{color:var(--muted)}
+.also{font-size:14px;color:var(--muted);margin-top:.3rem} .also a{color:var(--accent);text-decoration:none}
+.closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted);font-size:15px} .closing h2{color:var(--fg)}
+.lede.p{color:var(--muted)} .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
 .heads{margin:.2rem 0 0;padding-left:1.2rem;color:var(--muted);font-size:.95rem}
-.cuts{list-style:none;padding:0;margin:0} .cut{display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid var(--line);padding:.6rem 0} .cut-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem} .cut-title{font-size:1rem;line-height:1.3} .reason{font:14px/1.45 -apple-system,system-ui,sans-serif;color:var(--muted)} .count{font:14px -apple-system,system-ui,sans-serif;color:var(--muted);font-weight:400}
-button.flag{font:14px -apple-system,system-ui,sans-serif;padding:.35rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--panel,transparent);color:var(--fg);cursor:pointer;flex:none;min-height:36px} button.flag[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)} .flagged .cut-title{font-weight:600}
-.tokenbox{font:14px -apple-system,system-ui,sans-serif;color:var(--muted);margin:0 0 1rem} .tokenbox input{font-size:14px;padding:.3rem;width:14rem;max-width:60%} .tokenbox button{font-size:14px;padding:.3rem .6rem}
-.edition p{margin:.4rem 0 .9rem} .edition ul{padding-left:1.2rem}
+.cuts{list-style:none;padding:0;margin:0} .cut{display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid var(--line);padding:.6rem 0} .cut-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem} .cut-title{line-height:1.3} .reason{font-size:14px;color:var(--muted)}
+button.flag{font:inherit;font-size:14px;padding:.35rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--fg);cursor:pointer;flex:none;min-height:36px} button.flag[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)} .flagged .cut-title{font-weight:700}
+.tokenbox{display:none}
+a:focus-visible,summary:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style></head><body><main>${body}</main></body></html>`;
 }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
