@@ -465,7 +465,7 @@ async function editionPage(env, profile, date) {
       const h = esc(t.headline || s?.headline || "");
       return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(catName[s.category] || s.category)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
     }).join("")}</ol></section>` : "";
-  const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => `<p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${g.stories.length}</span></p><ul>${g.stories.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul>`).join("")}</nav>` : "";
+  const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => `<div class="toc-group"><p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${g.stories.length}</span></p><ul>${g.stories.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul></div>`).join("")}</nav>` : "";
   const sections = groups.map((g) => `<section class="cat-section"><h2 class="cat" id="cat-${g.id}">${esc(g.name)}</h2>${g.stories.map((s) => `
       <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
       <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`).join("")}</section>`).join("");
@@ -513,8 +513,8 @@ function page(title, body) {
 <title>${esc(title)}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
 <style>
-:root{--bg:#f6f4ef;--panel:#fdfcfa;--fg:#1e1c19;--muted:#6b665d;--line:#d9d4cb;--accent:#8a2a1b;--accent-soft:#f1e3df;--ui:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-@media (prefers-color-scheme:dark){:root{--bg:#151517;--panel:#1d1d20;--fg:#e8e5df;--muted:#9d978e;--line:#2f2e32;--accent:#e07a5f;--accent-soft:#3a2420}}
+:root{--bg:#f6f4ef;--panel:#fdfcfa;--stripe:#ece8e0;--fg:#1e1c19;--muted:#6b665d;--line:#d9d4cb;--accent:#8a2a1b;--accent-soft:#f1e3df;--ui:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#151517;--panel:#1d1d20;--stripe:#232327;--fg:#e8e5df;--muted:#9d978e;--line:#2f2e32;--accent:#e07a5f;--accent-soft:#3a2420}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
 main{max-width:44rem;margin:0 auto;padding:1.2rem 1rem 5rem}
@@ -532,9 +532,10 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .top li:first-child{border-top:0}
 .top li::before{content:counter(top);position:absolute;left:0;top:.6rem;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--fg);color:var(--bg);font-size:13px;font-weight:700;display:grid;place-items:center}
 .top li a{font-weight:700;text-decoration:none;line-height:1.3;display:block}
-.toc{margin:0 0 1.6rem;padding:.6rem 1rem .4rem;border:1px solid var(--line);border-radius:8px;font-size:15px}
-.toc h2{margin:.1rem 0 .3rem;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.toc-cat{margin:.55rem 0 .1rem;font-weight:700} .toc ul{margin:0 0 .2rem;padding-left:1.1rem} .toc li{margin:.12rem 0} .toc a{text-decoration:none} .count{color:var(--muted);font-weight:400;font-size:13px}
+.toc{margin:0 0 1.6rem;border:1px solid var(--line);border-radius:8px;font-size:15px;overflow:hidden}
+.toc h2{margin:0;padding:.6rem 1rem .4rem;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.toc-group{padding:.55rem 1rem .6rem;background:var(--panel)} .toc-group:nth-child(odd){background:var(--stripe)}
+.toc-cat{margin:0 0 .2rem;font-weight:700} .toc ul{margin:0;padding-left:1.1rem} .toc li{margin:.18rem 0;line-height:1.4} .toc a{text-decoration:none} .count{color:var(--muted);font-weight:400;font-size:13px}
 h2.cat{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.8rem 0 .2rem;display:flex;justify-content:space-between}
 details.story{border-top:1px solid var(--line)} details.story:last-child{border-bottom:1px solid var(--line)}
 details.story summary{list-style:none;cursor:pointer;display:grid;gap:.15rem .8rem;padding:.7rem .2rem .7rem 0;align-items:start}
