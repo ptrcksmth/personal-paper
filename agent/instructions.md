@@ -13,7 +13,7 @@ These instructions are the product. `agent/editorial-standard.md` is the judgmen
 | Write credential | If `WRITE_TOKEN` is set, the tools send it. If not, send nothing: the cloud environment's network secret adds it to requests for the host |
 | Working directory | `out/` in the repository checkout, gitignored, discarded after the run |
 | Date of the edition | Today's date in UTC, `YYYY-MM-DD` |
-| Run id | `YYYY-MM-DDTHH-<profile-id>`, the hour in UTC |
+| Run id | `YYYY-MM-DDTHHMM-<profile-id>`, the UTC time to the minute, from `date -u +%Y-%m-%dT%H%M`. Two runs in one hour must not share an id. |
 
 Tools, all deterministic, in `agent/tools/`:
 
@@ -41,7 +41,7 @@ Read the definition: categories and weights, deprioritize list, editorial rules,
 Open the run immediately, so a crash leaves a trace:
 
 ```
-# out/run-open.json: {"id": "<run-id>", "profile_id": "<profile>", "profile_version": <version>, "started_at": "<ISO now>"}
+# out/run-open.json: {"id": "<run-id>", "profile_id": "<profile>", "profile_version": <version>, "started_at": "<ISO now from date -u, never a rounded or guessed time>"}
 node agent/tools/pp.mjs run-open out/run-open.json
 ```
 
@@ -164,7 +164,7 @@ Note anything that suggests the profile should change, as **proposals, never edi
 node agent/tools/pp.mjs stories out/stories.json
 node agent/tools/pp.mjs edition out/edition.json
 node agent/tools/pp.mjs candidates out/candidates-record.json
-# out/run-close.json: {"ended_at": "<ISO now>", "status": "ok|degraded|failed", "cost_usd": null,
+# out/run-close.json: {"ended_at": "<ISO now from date -u, the actual clock>", "status": "ok|degraded|failed", "cost_usd": null,
 #   "log": {"profile_version": <v>, "feeds": {"fetched": n, "failed": n, "items_in_window": n},
 #           "collapsed_by_tool": n, "coverage_searches": n, "fetches": n, "subagents": n,
 #           "candidates": {"after_collapse": n, "after_repeats": n, "after_deprioritize": n, "shortlisted": n, "read": n},
