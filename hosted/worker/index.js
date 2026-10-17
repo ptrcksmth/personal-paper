@@ -487,7 +487,7 @@ async function editionPage(env, profile, date) {
     image: `https://personalpaper.org/${profile}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
   };
   return html(page(`${p.name} · ${e.date}`,
-    `<p class="meta nav">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
+    `<p class="meta nav">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><div class="brand"><a href="/" class="wordmark">PersonalPaper</a><p class="date">${esc(longDate)}</p></div></header>
      ${top}${toc}${sections}${closing}<p class="meta nav">${links}</p>`, share));
 }
 
@@ -571,7 +571,9 @@ main{max-width:44rem;margin:0 auto;padding:1.2rem 1rem 5rem}
 a{color:inherit} h1{font-size:1.5rem;line-height:1.2;margin:.2rem 0;font-weight:700}
 h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .meta,.date{color:var(--muted);font-size:14px} .meta a{color:var(--accent);text-decoration:none} .nav{margin:.2rem 0}
-.masthead{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem}
+.brand{display:flex;flex-direction:column;align-items:flex-end;gap:.1rem} .brand .date{margin:0}
+.wordmark{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700;text-decoration:none}
 .badge{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px;vertical-align:middle}
 .kicker{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-top:.15rem}
 .lede{display:block;color:var(--muted);font-size:.95em;line-height:1.45;margin-top:.1rem}
