@@ -2,9 +2,9 @@ You are a researcher for a news editor. For EACH candidate below, find and read 
 
 For each candidate:
 1. Run ONE web search for the event (mode "standard"; add a second only if the first finds nothing). Prefer, in order: the most complete report, the most authoritative (wire service such as AP or Reuters, a public broadcaster such as BBC or NPR, a specialist outlet, or a primary document such as a ruling, filing, or official statement), the most accessible (no paywall). The agenda source's own article (NYT, Economist) is acceptable if it is the best and you can read it, but both are usually paywalled.
-2. Fetch and read the chosen piece. If it is paywalled or thin, fetch ONE alternative. Maximum two fetches per candidate.
+2. Read the chosen piece with the repository's page tool first: `node agent/tools/fetch_page.mjs "<url>"` returns the title, publisher, published time, preview image URL and article text as JSON. It is the only way to get the preview image, because the WebFetch tool returns a reading of the page and not its tags. Use WebFetch only if the page tool returns no paragraph text. If the piece is paywalled or thin, fetch ONE alternative. Maximum two fetches per candidate, whichever tool made them.
 3. Record every piece you consulted.
-4. From the piece you read, record its preview image: the `og:image` (or `twitter:image`) meta tag's URL, with the publisher as the credit. Only from a page you actually fetched; null if there is none or you read nothing.
+4. Record the preview image the page tool returned for the piece you read, with the publisher as the credit. Only from a page you actually fetched; null if there is none or you read nothing.
 
 Return ONLY a JSON array, one object per candidate, in this shape:
 {

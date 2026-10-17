@@ -468,12 +468,16 @@ async function editionPage(env, profile, date) {
   const [nav, def, st] = await Promise.all([
     env.DB.prepare(`SELECT (SELECT MAX(date) FROM editions WHERE profile_id = ?1 AND date < ?2) AS prev, (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`).bind(profile, e.date).first(),
     env.DB.prepare(`SELECT definition FROM profile_versions WHERE profile_id = ? ORDER BY version DESC LIMIT 1`).bind(profile).first(),
-    env.DB.prepare(`SELECT s.* FROM stories s JOIN runs r ON r.id = s.run_id
+    env.DB.prepare(`SELECT s.*, r.started_at AS run_started_at FROM stories s JOIN runs r ON r.id = s.run_id
                     WHERE s.profile_id = ?1 AND substr(r.started_at, 1, 10) = ?2
                     ORDER BY s.newsworthiness DESC, s.created_at ASC`).bind(profile, e.date).all(),
   ]);
   const catName = Object.fromEntries(((safeJson(def?.definition) || {}).categories || []).map((c) => [c.id, c.name]));
   const stories = st.results.map(parseStory);
+  // The latest run is the edition; earlier runs the same day are history, shown collapsed per section.
+  const latestRun = e.run_id;
+  const isLatest = (s) => s.run_id === latestRun;
+  const runCount = new Set(stories.map((s) => s.run_id)).size;
   // Category order: as the agent ordered the markdown body (## headings), then any category it did not mention.
   const bodyOrder = [...String(e.body_md || "").matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
   const nameToId = Object.fromEntries(Object.entries(catName).map(([id, n]) => [n, id]));
@@ -493,10 +497,21 @@ async function editionPage(env, profile, date) {
       const h = esc(t.headline || s?.headline || "");
       return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(catName[s.category] || s.category)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
     }).join("")}</ol></section>` : "";
-  const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => `<div class="toc-group"><p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${g.stories.length}</span></p><ul>${g.stories.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul></div>`).join("")}</nav>` : "";
-  const sections = groups.map((g) => `<section class="cat-section"><h2 class="cat" id="cat-${g.id}"><span>${esc(g.name)}</span><span class="count">${g.stories.length} ${g.stories.length === 1 ? "story" : "stories"}</span></h2>${g.stories.map((s) => `
+  const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => {
+    const now = runCount > 1 ? g.stories.filter(isLatest) : g.stories;
+    const earlierN = g.stories.length - now.length;
+    return `<div class="toc-group"><p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${now.length}${earlierN ? ` + ${earlierN} earlier` : ""}</span></p><ul>${now.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul></div>`;
+  }).join("")}</nav>` : "";
+  const storyHtml = (s) => `
       <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
-      <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`).join("")}</section>`).join("");
+      <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`;
+  const sections = groups.map((g) => {
+    const now = runCount > 1 ? g.stories.filter(isLatest) : g.stories;
+    const earlier = runCount > 1 ? g.stories.filter((s) => !isLatest(s)) : [];
+    const countLabel = `${g.stories.length} ${g.stories.length === 1 ? "story" : "stories"}`;
+    const earlierBlock = earlier.length ? `<details class="earlier"><summary>Earlier today <span class="count">${earlier.length}</span></summary>${earlier.map(storyHtml).join("")}</details>` : "";
+    return `<section class="cat-section"><h2 class="cat" id="cat-${g.id}"><span>${esc(g.name)}</span><span class="count">${countLabel}</span></h2>${now.map(storyHtml).join("")}${earlierBlock}</section>`;
+  }).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const links = [
     nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
@@ -622,7 +637,8 @@ details.story summary.hasimg{grid-template-columns:64px 1fr} details.story summa
 details.story summary::-webkit-details-marker{display:none}
 details.story summary .h{font-weight:700;line-height:1.3} details.story summary .l{color:var(--muted);font-size:.95em;line-height:1.45}
 details.story[open] summary .l{display:none} details.story[open] summary .h{color:var(--accent)}
-details.story .body{padding:0 0 1rem} details.story .body p{margin:.35rem 0 .5rem} .why{color:var(--muted)}
+details.story .body{padding:0 0 1rem}
+details.earlier{border-top:1px solid var(--line);margin-top:.2rem} details.earlier>summary{list-style:none;cursor:pointer;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:.55rem 0} details.earlier>summary::-webkit-details-marker{display:none} details.earlier>summary::before{content:"▸ ";} details.earlier[open]>summary::before{content:"▾ ";} details.earlier details.story{margin-left:.6rem} details.story .body p{margin:.35rem 0 .5rem} .why{color:var(--muted)}
 .also{font-size:14px;color:var(--muted);margin-top:.3rem} .also a{color:var(--accent);text-decoration:none}
 .closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted);font-size:15px} .closing h2{color:var(--fg)}
 .lede.p{color:var(--muted)} .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
