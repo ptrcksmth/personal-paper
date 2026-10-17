@@ -2,7 +2,7 @@
 
 **A news editor just for you:** an agent that collects news from sources you define, finds the best coverage for each story, and writes a short daily edition. Transparent about what it found, kept, and featured, showing everything it considered and what it cut.
 
-Personal Paper has intelligent defaults with an expanding list of public news feeds, starting with World and U.S. news seeded by headlines from the Economist and the NY Times. Read it at **[personalpaper.org](https://personalpaper.org)**.
+Personal Paper has intelligent defaults with an expanding list of public news feeds, starting with World and U.S. news seeded by headlines from the Economist, the NY Times and the Wall Street Journal, with the BBC, NPR, the Guardian, Al Jazeera and the FT as signal feeds. Read it at **[personalpaper.org](https://personalpaper.org)**.
 
 It's designed for anyone to define their own sources, and to then publish your news publicly or privately in your own hosting environment.
 
