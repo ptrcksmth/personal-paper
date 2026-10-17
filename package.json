@@ -1,0 +1,35 @@
+{
+  "name": "personal-paper",
+  "version": "2.1.0",
+  "description": "PersonalPaper: an agent that finds the news stories significant to a defined set of interests and delivers a daily edition. Agent instructions, hosted environment, schema.",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "seed:build": "node hosted/seed/build-seed.mjs",
+    "db:local": "wrangler d1 execute personal-paper --local --file hosted/schema.sql && node hosted/seed/build-seed.mjs && wrangler d1 execute personal-paper --local --file hosted/seed/seed.sql",
+    "db:remote": "wrangler d1 execute personal-paper --remote --file hosted/schema.sql && node hosted/seed/build-seed.mjs && wrangler d1 execute personal-paper --remote --file hosted/seed/seed.sql"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ptrcksmth/personal-paper.git"
+  },
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ptrcksmth/personal-paper/issues"
+  },
+  "homepage": "https://github.com/ptrcksmth/personal-paper#readme",
+  "devDependencies": {
+    "wrangler": "^4.151.1"
+  },
+  "allowScripts": {
+    "workerd@1.20261012.1": true
+  },
+  "dependencies": {
+    "marked": "^16.4.1"
+  },
+  "private": true
+}

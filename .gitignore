@@ -1,2 +1,8 @@
 .claude/settings.local.json
 .DS_Store
+
+# Node
+node_modules/
+.wrangler/
+.dev.vars
+.secrets/
