@@ -2,7 +2,7 @@
 
 **Project:** v2.1, public global and U.S. news profile
 **Author:** Claude, from a working session with Patrick, 2026-10-17
-**Status:** Superseded 2026-10-17. Sections 4 and 5 (architecture) are replaced by PRD section 8 and `sysarch-diagrams.html`, which adopt a simpler three-part design: agent, hosted environment, repository. Sections 1 to 3 (the capabilities, the personas, the release matrix) still hold and are the record of how the design was reached. Not canon.
+**Status:** Superseded 2026-10-17. Sections 4 and 5 (architecture) are replaced by PRD section 8 and `docs/sysarch-diagrams.html`, which adopt a simpler three-part design: agent, hosted environment, repository. Sections 1 to 3 (the capabilities, the personas, the release matrix) still hold and are the record of how the design was reached. Not canon.
 
 ---
 

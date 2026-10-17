@@ -41,6 +41,7 @@ The load-bearing documents a new session should know exist. Read the one that ma
 - **The product vision (v2)**: `docs/product-vision.md`. What the product is and why: problem statement, concepts and how they relate, stacking, inputs, the two surfacing modes, the agent's roles, non-goals, and the open questions handed to each PRD. Deliberately contains no architecture. Read before any product or release work; it governs every PRD.
 - **The owner's founding brief**: `docs/product-vision-inputs.txt`. Patrick's own account of the new direction, written 2026-10-17 before the v2 vision existed: goals, agent role, inputs, output, project structure. Owner-authored; sessions read it and never edit it. Read when a question about intent is not settled by the vision.
 - **PRD: v2.1, public global and U.S. news profile**: `docs/prds/v2.1-public-news-profile.md`. The first release against the vision: scope, agenda sources and coverage, the profile, records, edition form, agent instructions, system architecture, build plan, decisions, and deferred items. Read before any work on the v2.1 project; it is that project's plan of record.
+- **System architecture diagrams**: `docs/sysarch-diagrams.html`. The three-part architecture drawn: components and data flows, one nightly run step by step, the write path, the data model, build order, and deferred items. Read alongside PRD section 8; open in a browser.
 
 ## Prior work
 

@@ -8,12 +8,14 @@
 *Build in progress from 2026-10-17 on the owner's go. Steps per PRD section 10.*
 
 - **Step 2: cloud environment** for the routine: network access Custom with the feed hosts; the write token as a network secret for personalpaper.org; connectors removed.
-- **Step 3: agent instructions** and the editorial standard; first manual edition from a laptop session; corrected and re-run.
+- **Step 3, remaining:** owner reads the first edition on personalpaper.org and gives corrections; a second manual run if the corrections are material.
 - **Step 4: nightly routine**, one manual trigger, run log checked for feeds fetched and writes accepted.
 - **Step 5: pages** reviewed on the iPad; listing, editions, feed, archive JSON already render from D1.
 
 ## SFL
 
+- **Weekend mode for profiles** (surfaced 2026-10-17, first edition, owner's observation): the Economist's weekly batch is analysis and lands Thursday and Friday; weekend NYT feeds are thin on hard news. A profile could define a weekend edition with fewer stories and analysis welcome. First step: a `cadence` block in the profile schema.
+- **One-day hold for same-day agenda stories** (surfaced 2026-10-17, first edition): same-day NYT stories run headline-only because nothing else has covered them; a profile option to hold them a day would trade timeliness for coverage. 10 of 27 stories in the first edition.
 - **MCP connector for the hosted environment** (surfaced 2026-10-17, architecture session): expose registry, outputs, and direction as tools with the credential held by claude.ai; documented as possible for routines. First step: when a second kind of agent needs the environment, or the write API grows. PRD sections 8.6 and 14.
 - **Self-hosted environment as the private path** (surfaced 2026-10-17): deploying the hosted environment yourself gives private profiles and editions with no auth feature; the owner's v2.2 form. Requires one-command deploy and destinations kept as agent configuration. PRD section 14.
 - **Admin write UI** (surfaced 2026-10-17): profile and direction edits through a page instead of the seed script and token. PRD section 14.
@@ -26,6 +28,7 @@
 
 ## Done
 
+- ✓ 2026-10-17 Step 3, first edition: agent/instructions.md and agent/editorial-standard.md written; tools fetch_feeds.mjs and pp.mjs; profile v2 (Economist window 7 days); first edition run from this session with 12 Sonnet coverage subagents, 27 stories in 12 categories, live at https://personalpaper.org/global-us-news/2026-10-17; run log closed ok. Lessons folded into the instructions: discovery queries, unfetchable agenda hosts, snippet facts.
 - ✓ 2026-10-17 Step 1, hosted environment: D1 `personal-paper` created and seeded; Worker deployed at https://personalpaper.org (custom domain, certificate issued) and personal-paper.patrick-e68.workers.dev; registry reads, authenticated writes (401 without token), idempotent story insert, pages and RSS all verified locally and on the domain; write token in `.secrets/write-token`, gitignored; deploy guide at hosted/deploy.md
-- ✓ 2026-10-17 Architecture locked (PRD section 8): agent as cloud routine, hosted environment on personalpaper.org, standalone repository; write path by network secret; diagrams at sysarch-diagrams.html
+- ✓ 2026-10-17 Architecture locked (PRD section 8): agent as cloud routine, hosted environment on personalpaper.org, standalone repository; write path by network secret; diagrams at docs/sysarch-diagrams.html (promoted to docs by the owner 2026-10-17)
 - ✓ 2026-10-17 Project opened from _explorations/2026-10-17-v2-vision/; plan written by reference to the PRD

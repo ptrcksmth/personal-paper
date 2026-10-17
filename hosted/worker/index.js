@@ -275,6 +275,10 @@ async function editionPage(env, profile, date) {
             (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`
   ).bind(profile, e.date).first();
   const body = marked.parse(e.body_md);
+  const todayList = safeJson(e.today);
+  const today = Array.isArray(todayList) && todayList.length
+    ? `<section class="today"><h2>Today</h2><ol>${todayList.map((t) => `<li>${esc(typeof t === "string" ? t : t.headline || "")}</li>`).join("")}</ol></section>`
+    : "";
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const links = [
     nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
@@ -284,7 +288,7 @@ async function editionPage(env, profile, date) {
   ].filter(Boolean).join(" · ");
   return html(page(`${p.name} · ${e.date}`,
     `<p class="meta">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(e.date)}</p></header>
-     <article class="edition">${body}</article>${closing}<p class="meta">${links}</p>`));
+     ${today}<article class="edition">${body}</article>${closing}<p class="meta">${links}</p>`));
 }
 
 async function feedXml(env, profile, url) {
@@ -320,6 +324,7 @@ h3{font-size:1.1rem;margin:1.2rem 0 .2rem} .meta,.date{color:var(--muted);font:1
 .masthead{border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem} .lede{color:var(--muted)}
 .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
 .closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted)}
+.today{margin:1rem 0 1.5rem} .today h2{margin-top:0} .today ol{padding-left:1.4rem;margin:.3rem 0} .today li{margin:.25rem 0;font-weight:600}
 .edition p{margin:.4rem 0 .9rem} .edition ul{padding-left:1.2rem}
 </style></head><body><main>${body}</main></body></html>`;
 }

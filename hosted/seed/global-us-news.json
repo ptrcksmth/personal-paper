@@ -6,29 +6,74 @@
   "description": "The day's significant news, worldwide and in the United States, as surfaced by the New York Times and the Economist, organized by the Economist's sections, with the top two or three stories in each, summarized and linked.",
   "cadence": "daily, run between 06:00 and 07:00 UTC",
   "edition_size": "2 to 3 stories per category; a category with nothing significant is omitted",
-
   "categories": [
-    { "id": "leaders",                "name": "Leaders",                "weight": 1.0 },
-    { "id": "briefing",               "name": "Briefing",               "weight": 1.0 },
-    { "id": "united-states",          "name": "United States",          "weight": 1.0 },
-    { "id": "international",          "name": "International",          "weight": 1.0 },
-    { "id": "finance-and-economics",  "name": "Finance and economics",  "weight": 1.0 },
-    { "id": "business",               "name": "Business",               "weight": 1.0 },
-    { "id": "europe",                 "name": "Europe",                 "weight": 1.0 },
-    { "id": "asia",                   "name": "Asia",                   "weight": 1.0 },
-    { "id": "china",                  "name": "China",                  "weight": 1.0 },
-    { "id": "middle-east-and-africa", "name": "Middle East and Africa", "weight": 1.0 },
-    { "id": "the-americas",           "name": "The Americas",           "weight": 1.0 },
-    { "id": "science-and-technology", "name": "Science and technology", "weight": 1.0 }
+    {
+      "id": "leaders",
+      "name": "Leaders",
+      "weight": 1.0
+    },
+    {
+      "id": "briefing",
+      "name": "Briefing",
+      "weight": 1.0
+    },
+    {
+      "id": "united-states",
+      "name": "United States",
+      "weight": 1.0
+    },
+    {
+      "id": "international",
+      "name": "International",
+      "weight": 1.0
+    },
+    {
+      "id": "finance-and-economics",
+      "name": "Finance and economics",
+      "weight": 1.0
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "weight": 1.0
+    },
+    {
+      "id": "europe",
+      "name": "Europe",
+      "weight": 1.0
+    },
+    {
+      "id": "asia",
+      "name": "Asia",
+      "weight": 1.0
+    },
+    {
+      "id": "china",
+      "name": "China",
+      "weight": 1.0
+    },
+    {
+      "id": "middle-east-and-africa",
+      "name": "Middle East and Africa",
+      "weight": 1.0
+    },
+    {
+      "id": "the-americas",
+      "name": "The Americas",
+      "weight": 1.0
+    },
+    {
+      "id": "science-and-technology",
+      "name": "Science and technology",
+      "weight": 1.0
+    }
   ],
   "category_notes": [
     "Weights are all 1.0 at launch. They exist so that personal signals and a later private view can reweight them without changing the profile's shape.",
     "'The world this week' is read as agenda only; it is a digest, not a category.",
     "Every candidate, from either agenda source or from discovery, is assigned to exactly one category by the agent. NYT feeds map naturally: World to the regional categories, U.S. and Politics to United States, Business to Business or Finance and economics."
   ],
-
   "entities": [],
-
   "deprioritize": [
     "celebrity and entertainment news",
     "sports, except an event of national or international consequence",
@@ -37,54 +82,110 @@
     "incremental product announcements",
     "live-blog and 'what we know' rolling formats"
   ],
-
   "agenda_sources": [
     {
       "publisher": "New York Times",
       "window_hours": 48,
       "feeds": [
-        { "name": "Home page", "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml" },
-        { "name": "World",     "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml" },
-        { "name": "U.S.",      "url": "https://rss.nytimes.com/services/xml/rss/nyt/US.xml" },
-        { "name": "Politics",  "url": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml" },
-        { "name": "Business",  "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml" }
+        {
+          "name": "Home page",
+          "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"
+        },
+        {
+          "name": "World",
+          "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+        },
+        {
+          "name": "U.S.",
+          "url": "https://rss.nytimes.com/services/xml/rss/nyt/US.xml"
+        },
+        {
+          "name": "Politics",
+          "url": "https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml"
+        },
+        {
+          "name": "Business",
+          "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
+        }
       ]
     },
     {
       "publisher": "The Economist",
-      "window_hours": 48,
+      "window_hours": 168,
       "feeds": [
-        { "name": "The world this week",    "url": "https://www.economist.com/the-world-this-week/rss.xml", "agenda_only_digest": true },
-        { "name": "Leaders",                "url": "https://www.economist.com/leaders/rss.xml" },
-        { "name": "Briefing",               "url": "https://www.economist.com/briefing/rss.xml" },
-        { "name": "United States",          "url": "https://www.economist.com/united-states/rss.xml" },
-        { "name": "International",          "url": "https://www.economist.com/international/rss.xml" },
-        { "name": "Finance and economics",  "url": "https://www.economist.com/finance-and-economics/rss.xml" },
-        { "name": "Business",               "url": "https://www.economist.com/business/rss.xml" },
-        { "name": "Europe",                 "url": "https://www.economist.com/europe/rss.xml" },
-        { "name": "Asia",                   "url": "https://www.economist.com/asia/rss.xml" },
-        { "name": "China",                  "url": "https://www.economist.com/china/rss.xml" },
-        { "name": "Middle East and Africa", "url": "https://www.economist.com/middle-east-and-africa/rss.xml" },
-        { "name": "The Americas",           "url": "https://www.economist.com/the-americas/rss.xml" },
-        { "name": "Science and technology", "url": "https://www.economist.com/science-and-technology/rss.xml" }
-      ]
+        {
+          "name": "The world this week",
+          "url": "https://www.economist.com/the-world-this-week/rss.xml",
+          "agenda_only_digest": true
+        },
+        {
+          "name": "Leaders",
+          "url": "https://www.economist.com/leaders/rss.xml"
+        },
+        {
+          "name": "Briefing",
+          "url": "https://www.economist.com/briefing/rss.xml"
+        },
+        {
+          "name": "United States",
+          "url": "https://www.economist.com/united-states/rss.xml"
+        },
+        {
+          "name": "International",
+          "url": "https://www.economist.com/international/rss.xml"
+        },
+        {
+          "name": "Finance and economics",
+          "url": "https://www.economist.com/finance-and-economics/rss.xml"
+        },
+        {
+          "name": "Business",
+          "url": "https://www.economist.com/business/rss.xml"
+        },
+        {
+          "name": "Europe",
+          "url": "https://www.economist.com/europe/rss.xml"
+        },
+        {
+          "name": "Asia",
+          "url": "https://www.economist.com/asia/rss.xml"
+        },
+        {
+          "name": "China",
+          "url": "https://www.economist.com/china/rss.xml"
+        },
+        {
+          "name": "Middle East and Africa",
+          "url": "https://www.economist.com/middle-east-and-africa/rss.xml"
+        },
+        {
+          "name": "The Americas",
+          "url": "https://www.economist.com/the-americas/rss.xml"
+        },
+        {
+          "name": "Science and technology",
+          "url": "https://www.economist.com/science-and-technology/rss.xml"
+        }
+      ],
+      "window_note": "The Economist publishes its weekly edition on Thursday and Friday and only a few items on other days, so a 48-hour window misses most of it after Saturday. Seven days makes the whole current issue agenda; the archive prevents repeats."
     }
   ],
-
   "coverage": {
     "search": "unconstrained",
-    "prefer": ["complete", "authoritative", "accessible"],
+    "prefer": [
+      "complete",
+      "authoritative",
+      "accessible"
+    ],
     "mark_subscriber_links": true,
     "discovery_per_category": true
   },
-
   "editorial": {
     "two_axes": true,
     "summary_length": "2 to 4 sentences",
     "summary_rule": "original prose, written from coverage the agent read; no verbatim passages beyond a short attributed quote",
     "mark_thin_summaries": true
   },
-
   "evolution": {
     "mode": "propose"
   }
