@@ -466,7 +466,7 @@ async function editionPage(env, profile, date) {
       return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(catName[s.category] || s.category)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
     }).join("")}</ol></section>` : "";
   const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => `<div class="toc-group"><p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${g.stories.length}</span></p><ul>${g.stories.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul></div>`).join("")}</nav>` : "";
-  const sections = groups.map((g) => `<section class="cat-section"><h2 class="cat" id="cat-${g.id}">${esc(g.name)}</h2>${g.stories.map((s) => `
+  const sections = groups.map((g) => `<section class="cat-section"><h2 class="cat" id="cat-${g.id}"><span>${esc(g.name)}</span><span class="count">${g.stories.length} ${g.stories.length === 1 ? "story" : "stories"}</span></h2>${g.stories.map((s) => `
       <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
       <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`).join("")}</section>`).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
@@ -536,7 +536,8 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .toc h2{margin:0;padding:.6rem 1rem .4rem;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .toc-group{padding:.55rem 1rem .6rem;background:var(--panel)} .toc-group:nth-child(odd){background:var(--stripe)}
 .toc-cat{margin:0 0 .2rem;font-weight:700} .toc ul{margin:0;padding-left:1.1rem} .toc li{margin:.18rem 0;line-height:1.4} .toc a{text-decoration:none} .count{color:var(--muted);font-weight:400;font-size:13px}
-h2.cat{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.8rem 0 .2rem;display:flex;justify-content:space-between}
+.cat-section{margin-top:2.4rem}
+h2.cat{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 .3rem;padding-top:.5rem;border-top:2px solid var(--fg);display:flex;justify-content:space-between;align-items:baseline}
 details.story{border-top:1px solid var(--line)} details.story:last-child{border-bottom:1px solid var(--line)}
 details.story summary{list-style:none;cursor:pointer;display:grid;gap:.15rem .8rem;padding:.7rem .2rem .7rem 0;align-items:start}
 details.story summary.hasimg{grid-template-columns:64px 1fr} details.story summary img{width:64px;height:64px;object-fit:cover;border-radius:6px;grid-row:1/span 2;background:var(--accent-soft)}
