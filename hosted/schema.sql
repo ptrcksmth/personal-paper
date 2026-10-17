@@ -81,3 +81,29 @@ CREATE TABLE IF NOT EXISTS direction (
   handled_at   TEXT,
   result       TEXT                             -- the agent's note and a pointer to what it produced
 );
+
+-- Every candidate the agent considered in a run, with the stage it left at and why.
+-- This is the evaluation record: the owner reads it on the cuts page and flags what should have run.
+CREATE TABLE IF NOT EXISTS candidates (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  profile_id     TEXT NOT NULL REFERENCES profiles(id),
+  run_id         TEXT NOT NULL REFERENCES runs(id),
+  ref            TEXT NOT NULL,                 -- feed ref from fetch_feeds, or discovery:<category>:<n>
+  title          TEXT NOT NULL,
+  url            TEXT,
+  source         TEXT,                          -- "Publisher / Feed"
+  published_at   TEXT,
+  category       TEXT,                          -- the category the agent assigned, if it got that far
+  stage          TEXT NOT NULL CHECK (stage IN ('kept', 'not-kept', 'not-shortlisted', 'deprioritized', 'repeat', 'collapsed')),
+  reason         TEXT,                          -- one line
+  collapsed_into TEXT,                          -- ref of the candidate this one was merged into
+  story_id       TEXT,                          -- when kept
+  flagged_at     TEXT,                          -- owner flagged "should have run"
+  flag_note      TEXT,
+  flag_handled_at TEXT,                         -- the agent acted on the flag
+  flag_result    TEXT,
+  created_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE (run_id, ref)
+);
+CREATE INDEX IF NOT EXISTS candidates_run ON candidates (run_id, stage);
+CREATE INDEX IF NOT EXISTS candidates_flagged ON candidates (profile_id, flagged_at);

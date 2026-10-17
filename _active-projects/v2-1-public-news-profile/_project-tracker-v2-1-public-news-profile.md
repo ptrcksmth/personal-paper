@@ -14,7 +14,7 @@
 
 ## SFL
 
-- **Cuts page and flags, the eval mechanism** (owner, 2026-10-17: "the most substantial change here"; held for a separate effort): record every candidate's exit stage and reason in a table; a `/<profile>/<date>/cuts` page listing them; the owner flags the ones he would have run, as direction entries; weekly review of flags by stage. First step: the candidates table in the schema and the stage reasons in step 4 of the instructions.
+- **Weekly flag review** (2026-10-17): after two weeks, count the owner's flags by exit stage and category, and decide which rule or profile setting to change. First step: a session that reads `/<profile>/flags.json` and the cuts records.
 - **Formatting pass: images, fonts, layout** (owner, 2026-10-17): preview images from the coverage page's metadata as credited thumbnails with a fallback; font and layout improvements for scanning on the iPad. Held until after the cuts page.
 - **Edition increment for multiple runs per day** (owner, 2026-10-17): keep date URLs; add an incrementor when a second edition is produced on the same day.
 - **Weekend mode for profiles** (surfaced 2026-10-17, first edition, owner's observation): the Economist's weekly batch is analysis and lands Thursday and Friday; weekend NYT feeds are thin on hard news. A profile could define a weekend edition with fewer stories and analysis welcome. First step: a `cadence` block in the profile schema.
@@ -31,6 +31,7 @@
 
 ## Done
 
+- ✓ 2026-10-17 Evals: candidates table; the agent records every candidate's stage and reason; cuts page per edition at /<profile>/<date>/cuts with a flag button (write token kept in the browser); flags.json and flag-handled for the agent; instructions updated to read flags at orient, run current flagged items as directed stories, and treat flag patterns as proposal evidence; tonight's 191 candidates backfilled.
 - ✓ 2026-10-17 Owner's first-edition review applied: RSS removed; Top stories block linked to anchors; table of contents per edition; archive index per profile at /<profile>/archive; profile v3 gives Business and Finance and economics up to four stories with the AI build-out, debt loads and market exposure named in scope; coverage brief moved to agent/cover-brief.md; closing-block count corrected.
 - ✓ 2026-10-17 Step 3, first edition: agent/instructions.md and agent/editorial-standard.md written; tools fetch_feeds.mjs and pp.mjs; profile v2 (Economist window 7 days); first edition run from this session with 12 Sonnet coverage subagents, 27 stories in 12 categories, live at https://personalpaper.org/global-us-news/2026-10-17; run log closed ok. Lessons folded into the instructions: discovery queries, unfetchable agenda hosts, snippet facts.
 - ✓ 2026-10-17 Step 1, hosted environment: D1 `personal-paper` created and seeded; Worker deployed at https://personalpaper.org (custom domain, certificate issued) and personal-paper.patrick-e68.workers.dev; registry reads, authenticated writes (401 without token), idempotent story insert, pages and RSS all verified locally and on the domain; write token in `.secrets/write-token`, gitignored; deploy guide at hosted/deploy.md

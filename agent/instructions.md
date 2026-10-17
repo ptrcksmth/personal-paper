@@ -33,9 +33,10 @@ node agent/tools/pp.mjs profile   <profile>              > out/profile.json
 node agent/tools/pp.mjs archive   <profile> --days 14    > out/archive.json
 node agent/tools/pp.mjs direction <profile> --unhandled  > out/direction.json
 node agent/tools/pp.mjs runs      <profile>              > out/runs.json
+node agent/tools/pp.mjs flags     <profile> --unhandled  > out/flags.json
 ```
 
-Read the definition: categories and weights, deprioritize list, editorial rules, evolution mode. Note the `version`; it goes in the run record. Read the archive: every story kept in the last fourteen days, each with its headline, link, category, and summary. You will not surface any of these again unless there is a new fact. Read the last run's log for anything that failed yesterday.
+Read the definition: categories and weights, deprioritize list, editorial rules, evolution mode. Note the `version`; it goes in the run record. Read the archive: every story kept in the last fourteen days, each with its headline, link, category, and summary. You will not surface any of these again unless there is a new fact. Read the last run's log for anything that failed yesterday. Read the flags: candidates from earlier runs that the owner marked "should have run", each with the stage that dropped it, your reason at the time, and the owner's note. A flag is the owner's judgment overriding yours; it is handled in step 2 and is evidence in step 7.
 
 Open the run immediately, so a crash leaves a trace:
 
@@ -60,6 +61,13 @@ After handling each entry, record what you did:
 node agent/tools/pp.mjs handled <id> out/handled-<id>.json
 ```
 
+Then flags, from `out/flags.json`. For each unhandled flag: if the item is still current, a development inside the profile's windows or a matter still live, treat it as a `research` direction and run it as a story with `directed: true`. If it is stale, do not run it; note in step 7 what would have changed the decision at the stage that dropped it. Either way, mark the flag handled:
+
+```
+# out/flag-<id>.json: {"result": "<ran as <story id> | stale; noted for proposals>"}
+node agent/tools/pp.mjs flag-handled <id> out/flag-<id>.json
+```
+
 ## 3. Gather
 
 ```
@@ -80,7 +88,18 @@ Work on the candidate list from agenda feeds plus discovery. Nothing has been re
 4. **Drop deprioritized.** Apply the profile's deprioritize list unless the candidate is tightly coupled to a category's substance.
 5. **Shortlist.** Within each category, rank the survivors by newsworthiness from what you know so far and keep the top four. Categories with fewer are fine. This is the list you will read.
 
-Record counts at each stage for the run log.
+Record every candidate's outcome as you go, in `out/candidates-record.json`: one entry per item in `out/candidates.json` plus every discovery item. This record is the owner's window into your judgment. The cuts page renders it grouped by stage, and the owner flags what should have run.
+
+```json
+{"candidates": [{
+  "profile_id": "<profile>", "run_id": "<run-id>", "ref": "<ref>", "title": "...", "url": "...", "source": "<Publisher / Feed>", "published_at": "<ISO or null>",
+  "category": "<category-id, or null if it never got one>",
+  "stage": "collapsed | deprioritized | repeat | not-shortlisted | not-kept | kept",
+  "reason": "<one line: what decided it>", "collapsed_into": "<ref, when collapsed>", "story_id": "<when kept>"
+}]}
+```
+
+Reasons are short and specific: "same item in the World feed", "deprioritize: celebrity", "repeat of 2026-10-16-houthi-aden-strike, no new fact", "ranked fifth in Europe on consequence; four stronger candidates", "read; Economist analysis with no readable coverage, nothing to summarize honestly". Stage `not-kept` is for shortlisted candidates you read and did not keep; give those the most careful reasons. Record counts per stage for the run log.
 
 ## 5. Cover
 
@@ -133,19 +152,20 @@ Section headings are the profile's category names, in the order of the day's sig
 
 ## 7. Reflect
 
-Note anything that suggests the profile should change, as **proposals, never edits**: a category empty for several days running, one overflowing with strong candidates, a deprioritized topic that kept earning its way in, a feed that failed repeatedly, a direction entry that named a new interest. Each proposal is one or two sentences with its evidence. They go in the closing block under *Proposals*.
+Note anything that suggests the profile should change, as **proposals, never edits**: a category empty for several days running, one overflowing with strong candidates, a deprioritized topic that kept earning its way in, a feed that failed repeatedly, a direction entry that named a new interest, a pattern in the owner's flags (several flags from the same stage or category point at a rule that is wrong, and a flag on a `deprioritized` item points at the deprioritize list). Each proposal is one or two sentences with its evidence. They go in the closing block under *Proposals*.
 
 ## 8. Publish
 
 ```
 node agent/tools/pp.mjs stories out/stories.json
 node agent/tools/pp.mjs edition out/edition.json
+node agent/tools/pp.mjs candidates out/candidates-record.json
 # out/run-close.json: {"ended_at": "<ISO now>", "status": "ok|degraded|failed", "cost_usd": null,
 #   "log": {"profile_version": <v>, "feeds": {"fetched": n, "failed": n, "items_in_window": n},
 #           "discovery_searches": n, "coverage_searches": n, "fetches": n, "subagents": n,
 #           "candidates": {"after_collapse": n, "after_repeats": n, "after_deprioritize": n, "shortlisted": n, "read": n},
 #           "stories_kept": n, "repeats_dropped": [ "<archive story id>", ... ],
-#           "direction_handled": [ids], "failures": ["<feed or step>: <what happened>"] }}
+#           "direction_handled": [ids], "flags_handled": [ids], "failures": ["<feed or step>: <what happened>"] }}
 node agent/tools/pp.mjs run-close <run-id> out/run-close.json
 ```
 
@@ -158,6 +178,7 @@ The closing block, stored as the edition's `closing`, in markdown:
 - *Run*: one line, status and the counts that matter (feeds fetched, stories kept, repeats dropped).
 - *Degraded sources*: named plainly, if any.
 - *Direction handled*: one line per entry, if any.
+- *Flags handled*: one line per flag, if any: what it was, what you did.
 - *Proposals*: from step 7, if any.
 
 If a step fails in a way you cannot recover, still close the run with `failed` and a log that says where it stopped. A missing run is worse than a failed one.

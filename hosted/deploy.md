@@ -63,7 +63,16 @@ npm run dev                                         # http://127.0.0.1:8787
 | GET | `/<profile>/archive.json?days=14` | no | recent stories, for repeat checks and stacking |
 | GET | `/<profile>/direction.json?unhandled=1` | no | direction entries |
 | GET | `/<profile>/runs.json` | no | recent run logs |
-| GET | `/`, `/<profile>`, `/<profile>/<date>`, `/<profile>/archive` | no | listing, latest edition, dated edition, archive index |
+| POST | `/api/candidates` | yes | the candidate record for a run: every item with its stage and reason (idempotent by run and ref) |
+| POST | `/api/candidates/<id>/flag` | yes | the owner flags a candidate "should have run" (`{"flag": false}` clears it) |
+| POST | `/api/candidates/<id>/flag-handled` | yes | the agent records what it did with a flag |
+| GET | `/<profile>/flags.json?unhandled=1` | no | flagged candidates |
+| GET | `/<profile>/<date>/cuts.json` | no | the candidate record for an edition |
+| GET | `/`, `/<profile>`, `/<profile>/<date>`, `/<profile>/<date>/cuts`, `/<profile>/archive` | no | listing, latest edition, dated edition, the cuts page, archive index |
+
+## The cuts page and flags
+
+Every edition has a cuts page at `/<profile>/<date>/cuts`: every candidate the agent considered, grouped by the stage it left at, with the agent's one-line reason. The owner flags anything that should have run. Flagging is a write, so the page asks once for the write token and keeps it in that browser's local storage; nothing else on the site needs it. The agent reads unhandled flags at the start of each run, runs a flagged item as a directed story if it is still current, and treats patterns in flags as evidence for profile proposals.
 
 ## Private profiles
 

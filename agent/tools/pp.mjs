@@ -6,6 +6,8 @@
 //   node agent/tools/pp.mjs archive   <id> [--days 14]          -> recent stories
 //   node agent/tools/pp.mjs direction <id> [--unhandled]        -> direction entries
 //   node agent/tools/pp.mjs runs      <id>                      -> recent run logs
+//   node agent/tools/pp.mjs flags     <id> [--unhandled]        -> candidates the owner flagged "should have run"
+//   node agent/tools/pp.mjs cuts      <id> <date>               -> the candidate record for an edition
 // Writes (auth: WRITE_TOKEN env var if set; otherwise none is sent, and the cloud environment's
 //         network secret is expected to add it):
 //   node agent/tools/pp.mjs run-open  <file.json>   {id, profile_id, profile_version, started_at}
@@ -14,6 +16,8 @@
 //   node agent/tools/pp.mjs edition   <file.json>   {profile_id, date, run_id, today, body_md, closing}
 //   node agent/tools/pp.mjs handled   <direction-id> <file.json>  {result}
 //   node agent/tools/pp.mjs put-profile <id> <file.json>  {definition, note}
+//   node agent/tools/pp.mjs candidates <file.json>  {candidates: [...]}   every candidate with its stage and reason
+//   node agent/tools/pp.mjs flag-handled <candidate-id> <file.json>  {result}
 //
 // Host: PP_HOST env var or --host, default https://personalpaper.org. Prints the JSON response.
 
@@ -44,6 +48,10 @@ switch (cmd) {
   case "archive":   await call("GET", `/${a1}/archive.json?days=${opt("--days", "14")}`); break;
   case "direction": await call("GET", `/${a1}/direction.json${flag("--unhandled") ? "?unhandled=1" : ""}`); break;
   case "runs":      await call("GET", `/${a1}/runs.json`); break;
+  case "flags":     await call("GET", `/${a1}/flags.json${flag("--unhandled") ? "?unhandled=1" : ""}`); break;
+  case "cuts":      await call("GET", `/${a1}/${a2}/cuts.json`); break;
+  case "candidates": await call("POST", `/api/candidates`, load(a1)); break;
+  case "flag-handled": await call("POST", `/api/candidates/${a1}/flag-handled`, load(a2)); break;
   case "run-open":  await call("POST", `/api/runs`, load(a1)); break;
   case "run-close": await call("PATCH", `/api/runs/${encodeURIComponent(a1)}`, load(a2)); break;
   case "stories":   await call("POST", `/api/stories`, load(a1)); break;
