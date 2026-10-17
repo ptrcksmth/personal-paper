@@ -108,6 +108,7 @@ For each shortlisted candidate, find and read the best coverage:
 1. One web search for the event. Prefer, in order, the most complete report, the most authoritative, the most accessible. A wire service, a public broadcaster, a primary document, or the agenda source's own article can each be best.
 2. Fetch and read the chosen piece. If it is paywalled or thin, fetch one alternative. Budget: two fetches per candidate.
 3. Record every piece consulted: publisher, link, whether you read it in full, whether it is behind a paywall. This becomes the story's `coverage`.
+4. Record the preview image of the piece you read, from its `og:image` or `twitter:image` meta tag, with the publisher as credit. The edition shows it as a thumbnail. Never invent an image URL; null is fine.
 
 If a subagent facility exists, give each category's shortlist to a subagent on a cheaper model with `agent/cover-brief.md` and the candidates, and have it return the coverage record and a short factual digest per candidate in the brief's JSON shape. Run the categories in parallel.
 
@@ -135,7 +136,8 @@ Write `out/stories.json`:
   "coverage": [{"publisher": "...", "url": "...", "read_in_full": true, "paywalled": false}],
   "newsworthiness": 0.0, "relevance": 0.0,
   "summary": "...", "why_it_matters": null, "basis": "<publisher of the piece the summary was written from, or headline-only>",
-  "directed": false, "related": null
+  "directed": false, "related": null,
+  "image": {"url": "<the preview image of the coverage you link, from its og:image meta tag, or null>", "credit": "<its publisher>"}
 }]}
 ```
 

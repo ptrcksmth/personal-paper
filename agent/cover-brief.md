@@ -4,6 +4,7 @@ For each candidate:
 1. Run ONE web search for the event (mode "standard"; add a second only if the first finds nothing). Prefer, in order: the most complete report, the most authoritative (wire service such as AP or Reuters, a public broadcaster such as BBC or NPR, a specialist outlet, or a primary document such as a ruling, filing, or official statement), the most accessible (no paywall). The agenda source's own article (NYT, Economist) is acceptable if it is the best and you can read it, but both are usually paywalled.
 2. Fetch and read the chosen piece. If it is paywalled or thin, fetch ONE alternative. Maximum two fetches per candidate.
 3. Record every piece you consulted.
+4. From the piece you read, record its preview image: the `og:image` (or `twitter:image`) meta tag's URL, with the publisher as the credit. Only from a page you actually fetched; null if there is none or you read nothing.
 
 Return ONLY a JSON array, one object per candidate, in this shape:
 {
@@ -11,6 +12,7 @@ Return ONLY a JSON array, one object per candidate, in this shape:
   "status": "read" | "headline-only",
   "chosen": {"publisher": "...", "url": "...", "published": "<ISO date or null>", "paywalled": false},
   "coverage": [{"publisher": "...", "url": "...", "read_in_full": true, "paywalled": false}],
+  "image": {"url": "<the page's preview image: the og:image or twitter:image meta tag of the piece you read, or null>", "credit": "<the publisher of that page>"},
   "facts": ["<5 to 8 short factual bullets: who, what, numbers, dates, names, quotes with attribution, consequence as reported>"],
   "notes": "<anything the editor should know: the story is older than it looks, the event developed further, conflicting reports, etc.>"
 }

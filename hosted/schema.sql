@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS stories (
   basis            TEXT NOT NULL,               -- which coverage the summary was written from, or headline-only
   directed         INTEGER NOT NULL DEFAULT 0,
   related          TEXT,                        -- JSON array of earlier story ids
+  image_url        TEXT,                        -- preview image from the coverage page's metadata, if any
+  image_credit     TEXT,                        -- publisher to credit for it
   created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS stories_profile_created ON stories (profile_id, created_at DESC);
@@ -107,3 +109,6 @@ CREATE TABLE IF NOT EXISTS candidates (
 );
 CREATE INDEX IF NOT EXISTS candidates_run ON candidates (run_id, stage);
 CREATE INDEX IF NOT EXISTS candidates_flagged ON candidates (profile_id, flagged_at);
+
+-- 2026-10-17: a preview image per story, from the coverage page's own metadata, with its credit.
+-- (On an existing database, apply as: ALTER TABLE stories ADD COLUMN image_url TEXT; ALTER TABLE stories ADD COLUMN image_credit TEXT;)

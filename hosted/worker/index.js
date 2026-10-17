@@ -207,17 +207,23 @@ async function postStories(env, b) {
   const required = ["id", "profile_id", "run_id", "category", "headline", "url", "surfaced_by", "coverage", "newsworthiness", "relevance", "summary", "basis"];
   for (const s of stories) for (const k of required) if (s[k] == null) return json({ error: `story ${s.id || "?"} missing ${k}` }, 400);
   const stmt = env.DB.prepare(
-    `INSERT OR IGNORE INTO stories (id, profile_id, run_id, category, headline, url, published_at, surfaced_by, coverage,
-       newsworthiness, relevance, summary, why_it_matters, basis, directed, related)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO stories (id, profile_id, run_id, category, headline, url, published_at, surfaced_by, coverage,
+       newsworthiness, relevance, summary, why_it_matters, basis, directed, related, image_url, image_credit)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET category = excluded.category, headline = excluded.headline, url = excluded.url,
+       published_at = excluded.published_at, surfaced_by = excluded.surfaced_by, coverage = excluded.coverage,
+       newsworthiness = excluded.newsworthiness, relevance = excluded.relevance, summary = excluded.summary,
+       why_it_matters = excluded.why_it_matters, basis = excluded.basis, directed = excluded.directed, related = excluded.related,
+       image_url = excluded.image_url, image_credit = excluded.image_credit`
   );
   const results = await env.DB.batch(stories.map((s) => stmt.bind(
     s.id, s.profile_id, s.run_id, s.category, s.headline, s.url, s.published_at || null, s.surfaced_by,
     JSON.stringify(s.coverage), Number(s.newsworthiness), Number(s.relevance), s.summary, s.why_it_matters || null,
-    s.basis, s.directed ? 1 : 0, s.related ? JSON.stringify(s.related) : null
+    s.basis, s.directed ? 1 : 0, s.related ? JSON.stringify(s.related) : null,
+    s.image?.url || s.image_url || null, s.image?.credit || s.image_credit || null
   )));
-  const inserted = results.reduce((n, r) => n + (r.meta.changes || 0), 0);
-  return json({ received: stories.length, inserted, ignored: stories.length - inserted }, 201);
+  const written = results.reduce((n, r) => n + (r.meta.changes || 0), 0);
+  return json({ received: stories.length, written }, 201);
 }
 
 async function postEdition(env, b) {
@@ -461,8 +467,8 @@ async function editionPage(env, profile, date) {
     }).join("")}</ol></section>` : "";
   const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => `<p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${g.stories.length}</span></p><ul>${g.stories.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul>`).join("")}</nav>` : "";
   const sections = groups.map((g) => `<section class="cat-section"><h2 class="cat" id="cat-${g.id}">${esc(g.name)}</h2>${g.stories.map((s) => `
-      <details class="story" id="${sid(s)}"><summary><span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
-      <div class="body">${metaLine(s)}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`).join("")}</section>`).join("");
+      <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
+      <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`).join("")}</section>`).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const links = [
     nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
@@ -531,7 +537,8 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .toc-cat{margin:.55rem 0 .1rem;font-weight:700} .toc ul{margin:0 0 .2rem;padding-left:1.1rem} .toc li{margin:.12rem 0} .toc a{text-decoration:none} .count{color:var(--muted);font-weight:400;font-size:13px}
 h2.cat{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:1.8rem 0 .2rem;display:flex;justify-content:space-between}
 details.story{border-top:1px solid var(--line)} details.story:last-child{border-bottom:1px solid var(--line)}
-details.story summary{list-style:none;cursor:pointer;display:grid;gap:.15rem;padding:.7rem .2rem .7rem 0}
+details.story summary{list-style:none;cursor:pointer;display:grid;gap:.15rem .8rem;padding:.7rem .2rem .7rem 0;align-items:start}
+details.story summary.hasimg{grid-template-columns:64px 1fr} details.story summary img{width:64px;height:64px;object-fit:cover;border-radius:6px;grid-row:1/span 2;background:var(--accent-soft)}
 details.story summary::-webkit-details-marker{display:none}
 details.story summary .h{font-weight:700;line-height:1.3} details.story summary .l{color:var(--muted);font-size:.95em;line-height:1.45}
 details.story[open] summary .l{display:none} details.story[open] summary .h{color:var(--accent)}
