@@ -1,0 +1,47 @@
+Product vision outline
+This is meant to outline the new direction for the project
+Once we have a fleshed out product vision, we'll move into the PRD for the initial release.
+I'd like to have an initial version ready to go today, with 3-4 hours of work.
+
+Goals:
+Primary: find and keep track of news items related to developments that are significant to defined interests.
+
+Functional:
+	daily refresh (2-3 am ET)
+	evolve the topics over time
+	
+	One potentially interesting direction: 
+		I imagine having a private version based on my own personal interests
+		And building a public versions, e.g. that
+			aggregate global, national and local news 
+			industry-specific news
+		These could then be "stacked" together into a single personalized view, ranking them based on my own personal weightings
+		
+Agent role: everything -- scraper, aggregator, editor, operator and interface
+
+Input: 
+	rss feeds may or may not be useful
+	news items generally available to the agent (this is where I think we may be able to dramatically improve the structure; given the news access that foundational models seem to have now, I don't know if the feeds are necessary; or perhaps they're good as pointers, but shouldn't be used exclusively)
+	Sources specific to my interests
+	Sources behind paywalls, especially:
+		NYT (where I have a subscription)
+		Economist (where I have a subscription)
+		My LinkedIn feed (I'm particularly interested in this because this is where I find the most pertinent developments to my industry, and prescient anlysis of trends)
+	Email newsletters
+	last time, I tried to boil the ocean from the start, incorporating a broad range of feeds from the start. 
+	I'd like to take a more incremental approach here and prove the utility of the concept & format and incrementally add more sources.
+
+Output
+	Digitally, not print. 
+	The layout engine ended up being both a gating factor and unnecessary. And I used my ipad mini to read it, rather than print it
+	Summaries, linked to full details
+	This could be anything: a simple webpage, an app, markdown files, something I'm not imagining -- whatever's most well suited to the task.
+
+project structure
+	keep in github
+	may eventually open source it
+	I'd like to use our standard project structure. 
+		What's the best way to overlay that - just run `/project-setup`? 
+		I'm assuming we can gitignore files & directories with leading underscores?
+
+Ingest all of this and draft `_product-vision.md`.
