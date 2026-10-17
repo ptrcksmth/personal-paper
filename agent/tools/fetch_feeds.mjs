@@ -4,9 +4,11 @@
 // Usage: node agent/tools/fetch_feeds.mjs <profile-id> [--host https://personalpaper.org] [--out out/candidates.json]
 //
 // Reads the profile definition from the hosted environment's registry, fetches every feed in
-// agenda_sources, keeps items published within each source's window_hours, and writes one JSON
-// file: items grouped by feed, with counts and failures. Deterministic: no model, no judgment.
-// Exit code 0 even when some feeds fail; failures are in the output for the run log.
+// agenda_sources, keeps items published within each source's window_hours, collapses exact
+// duplicates (same link, or same title) across feeds, and writes:
+//   out/candidates.json   items grouped by feed; duplicates carry duplicate_of; counts and failures
+//   out/collapsed.json    the duplicates, ready to go into the candidate record as stage "collapsed"
+// Deterministic: no model, no judgment. Exit code 0 even when some feeds fail.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -95,7 +97,7 @@ for (const source of def.agenda_sources || []) {
     const inWindow = r.items.filter((it) => !it.published || now - Date.parse(it.published) <= windowMs);
     kept += inWindow.length;
     feeds.push({
-      publisher: source.publisher, feed: feed.name, url: feed.url,
+      publisher: source.publisher, feed: feed.name, url: feed.url, role: source.role || "agenda",
       agenda_only_digest: !!feed.agenda_only_digest,
       fetched: r.items.length, in_window: inWindow.length,
       items: inWindow.map((it, i) => ({ ref: `${slug(source.publisher)}:${slug(feed.name)}:${i}`, ...it })),
@@ -104,13 +106,49 @@ for (const source of def.agenda_sources || []) {
 }
 
 function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+function normTitle(t) { return String(t || "").toLowerCase().replace(/\s*[|–—-]\s*(bbc news|the guardian|npr|al jazeera|wsj|financial times)\s*$/i, "").replace(/[^a-z0-9]+/g, " ").trim(); }
+function normLink(u) { try { const x = new URL(u); x.search = ""; x.hash = ""; return (x.origin + x.pathname).replace(/\/$/, "").toLowerCase(); } catch { return String(u || "").toLowerCase(); } }
 
+// Collapse exact duplicates across feeds. The canonical item is an agenda-role item if any, else the
+// earliest published. Returns the number collapsed; marks duplicates in place with duplicate_of.
+function collapse(feeds) {
+  const all = [];
+  for (const f of feeds) for (const it of f.items) all.push({ it, f });
+  const byKey = new Map();
+  for (const { it, f } of all) {
+    for (const key of [`l:${normLink(it.link)}`, `t:${normTitle(it.title)}`]) {
+      if (key.length < 8) continue;
+      (byKey.get(key) || byKey.set(key, []).get(key)).push({ it, f });
+    }
+  }
+  let n = 0;
+  for (const group of byKey.values()) {
+    if (group.length < 2) continue;
+    const live = group.filter((g) => !g.it.duplicate_of);
+    if (live.length < 2) continue;
+    live.sort((a, b) => (a.f.role === "agenda" ? 0 : 1) - (b.f.role === "agenda" ? 0 : 1) || String(a.it.published || "").localeCompare(String(b.it.published || "")));
+    const canon = live[0];
+    for (const g of live.slice(1)) { g.it.duplicate_of = canon.it.ref; g.it.duplicate_reason = `same item in ${canon.f.publisher} / ${canon.f.feed}`; n++; }
+  }
+  return n;
+}
+
+const collapsed = collapse(feeds);
+const unique = kept - collapsed;
+const perFeed = feeds.map((f) => ({ source: `${f.publisher} / ${f.feed}`, role: f.role, in_window: f.in_window || 0, duplicates: f.items.filter((i) => i.duplicate_of).length }));
 const result = {
   profile: profileId, profile_version: profile.version, host, fetched_at: new Date(now).toISOString(),
-  counts: { feeds: feeds.length, failed: failures.length, items_fetched: total, items_in_window: kept },
-  failures, feeds,
+  counts: { feeds: feeds.length, failed: failures.length, items_fetched: total, items_in_window: kept, collapsed, unique },
+  per_feed: perFeed, failures, feeds,
 };
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, JSON.stringify(result, null, 2));
-console.log(`${profileId} v${profile.version}: ${feeds.length} feeds, ${failures.length} failed, ${total} items fetched, ${kept} in window -> ${out}`);
+const collapsedList = [];
+for (const f of feeds) for (const it of f.items) if (it.duplicate_of) collapsedList.push({
+  ref: it.ref, title: it.title, url: it.link, source: `${f.publisher} / ${f.feed}`, published_at: it.published,
+  stage: "collapsed", reason: it.duplicate_reason, collapsed_into: it.duplicate_of,
+});
+writeFileSync(out.replace(/candidates\.json$/, "collapsed.json"), JSON.stringify({ collapsed: collapsedList }, null, 2));
+console.log(`${profileId} v${profile.version}: ${feeds.length} feeds, ${failures.length} failed, ${total} items fetched, ${kept} in window, ${collapsed} collapsed as duplicates, ${unique} unique -> ${out}`);
+for (const pf of perFeed) console.log(`  ${pf.role.padEnd(6)} ${pf.source.padEnd(36)} in_window=${String(pf.in_window).padStart(3)} duplicates=${pf.duplicates}`);
 for (const f of failures) console.log(`  FAILED ${f.publisher} / ${f.feed}: ${f.error}`);

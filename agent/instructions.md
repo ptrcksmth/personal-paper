@@ -74,21 +74,23 @@ node agent/tools/pp.mjs flag-handled <id> out/flag-<id>.json
 node agent/tools/fetch_feeds.mjs <profile>
 ```
 
-This writes `out/candidates.json`: every item within the window, grouped by feed, with counts and failures. Items from a feed marked `agenda_only_digest` are agenda signal only; never link them. Note failures for the run log and the closing block.
+This writes `out/candidates.json`: every item within the window, grouped by feed, with counts and failures, and `out/collapsed.json`: the exact duplicates the tool already found across feeds (same link or same title), each with the ref it collapsed into. Work from the items without a `duplicate_of`; the duplicates go straight into the candidate record (step 4) as stage `collapsed` with the tool's reason. Items from a feed marked `agenda_only_digest` are agenda signal only; never link them. Note failures for the run log and the closing block.
 
-Then discovery: for each news category in the profile (skip opinion and digest categories such as Leaders and Briefing), run **one** web search with the agenda sources' own domains blocked (`blocked_domains: ["nytimes.com", "economist.com"]`) and a topical query built from the category's scope and today's date in words, such as "Middle East Africa" plus "October 17". Date-only queries like "world news October 17 2026" return content farms and stale roundups; do not use them. Add any result that looks significant and is not already a candidate to a discovery list, marked `surfaced_by: "discovery:<category-id>"`. Discovery exists to measure what the agenda misses; it is not a second agenda. Budget: one search per category. If a search returns nothing usable, record that and move on.
+Sources carry a `role`. **Agenda** sources (the NYT and the Economist for this profile) set what is significant today; rank from their judgment. **Signal** sources (BBC, NPR, the Guardian, Al Jazeera, the FT, the WSJ) corroborate and widen the aperture; their items are candidates like any other, judged on consequence, and a story that only a signal feed surfaced is the measure of what the agenda missed. The cuts page tallies, per source, what was fetched, what duplicated another feed, what was kept, and what was kept with that feed as the sole source.
+
+Discovery by web search is retired. The signal feeds and the per-source tally answer the question it was meant to answer, and the search tool cannot reach the wire services.
 
 ## 4. Aggregate
 
 Work on the candidate list from agenda feeds plus discovery. Nothing has been read yet; you are working from headlines and descriptions.
 
-1. **Collapse.** Items reporting the same event become one candidate. Keep every source reference on it.
+1. **Collapse.** The tool has already removed exact duplicates. Now collapse items that report the same event in different words into one candidate, keeping every source reference on it. Prefer an agenda-source item as the canonical one when there is a choice.
 2. **Categorize.** Assign each candidate to exactly one category from the profile, per the editorial standard.
 3. **Drop repeats.** A candidate that reports the same matter as a story in `out/archive.json` with no new fact is a repeat; drop it. A genuine new development is a new candidate; note the earlier story's id for `related`.
 4. **Drop deprioritized.** Apply the profile's deprioritize list unless the candidate is tightly coupled to a category's substance.
 5. **Shortlist.** Within each category, rank the survivors by newsworthiness from what you know so far and keep the top four. Categories with fewer are fine. This is the list you will read.
 
-Record every candidate's outcome as you go, in `out/candidates-record.json`: one entry per item in `out/candidates.json` plus every discovery item. This record is the owner's window into your judgment. The cuts page renders it grouped by stage, and the owner flags what should have run.
+Record every candidate's outcome as you go, in `out/candidates-record.json`: one entry per item in `out/candidates.json`. Start the file from `out/collapsed.json`, whose entries are already in the right shape, and add `profile_id` and `run_id` to each. This record is the owner's window into your judgment. The cuts page renders it grouped by stage, and the owner flags what should have run.
 
 ```json
 {"candidates": [{
@@ -164,7 +166,7 @@ node agent/tools/pp.mjs edition out/edition.json
 node agent/tools/pp.mjs candidates out/candidates-record.json
 # out/run-close.json: {"ended_at": "<ISO now>", "status": "ok|degraded|failed", "cost_usd": null,
 #   "log": {"profile_version": <v>, "feeds": {"fetched": n, "failed": n, "items_in_window": n},
-#           "discovery_searches": n, "coverage_searches": n, "fetches": n, "subagents": n,
+#           "collapsed_by_tool": n, "coverage_searches": n, "fetches": n, "subagents": n,
 #           "candidates": {"after_collapse": n, "after_repeats": n, "after_deprioritize": n, "shortlisted": n, "read": n},
 #           "stories_kept": n, "repeats_dropped": [ "<archive story id>", ... ],
 #           "direction_handled": [ids], "flags_handled": [ids], "failures": ["<feed or step>: <what happened>"] }}
@@ -189,7 +191,6 @@ If a step fails in a way you cannot recover, still close the run with `failed` a
 
 | Item | Cap per profile per run |
 |---|---|
-| Discovery searches | one per category |
 | Coverage searches | one per shortlisted candidate, plus one retry |
 | Fetches | two per shortlisted candidate |
 | Shortlist | four per category |

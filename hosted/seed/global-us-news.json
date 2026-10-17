@@ -109,7 +109,8 @@
           "name": "Business",
           "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"
         }
-      ]
+      ],
+      "role": "agenda"
     },
     {
       "publisher": "The Economist",
@@ -169,7 +170,82 @@
           "url": "https://www.economist.com/science-and-technology/rss.xml"
         }
       ],
-      "window_note": "The Economist publishes its weekly edition on Thursday and Friday and only a few items on other days, so a 48-hour window misses most of it after Saturday. Seven days makes the whole current issue agenda; the archive prevents repeats."
+      "window_note": "The Economist publishes its weekly edition on Thursday and Friday and only a few items on other days, so a 48-hour window misses most of it after Saturday. Seven days makes the whole current issue agenda; the archive prevents repeats.",
+      "role": "agenda"
+    },
+    {
+      "publisher": "BBC",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        {
+          "name": "World",
+          "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+        },
+        {
+          "name": "US and Canada",
+          "url": "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml"
+        }
+      ]
+    },
+    {
+      "publisher": "NPR",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        {
+          "name": "News",
+          "url": "https://feeds.npr.org/1001/rss.xml"
+        }
+      ]
+    },
+    {
+      "publisher": "The Guardian",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        {
+          "name": "World",
+          "url": "https://www.theguardian.com/world/rss"
+        },
+        {
+          "name": "US",
+          "url": "https://www.theguardian.com/us-news/rss"
+        }
+      ]
+    },
+    {
+      "publisher": "Al Jazeera",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        {
+          "name": "All",
+          "url": "https://www.aljazeera.com/xml/rss/all.xml"
+        }
+      ]
+    },
+    {
+      "publisher": "Financial Times",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        {
+          "name": "World",
+          "url": "https://www.ft.com/world?format=rss"
+        }
+      ]
+    },
+    {
+      "publisher": "Wall Street Journal",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        {
+          "name": "World",
+          "url": "https://feeds.content.dowjones.io/public/rss/RSSWorldNews"
+        }
+      ]
     }
   ],
   "coverage": {
@@ -180,7 +256,8 @@
       "accessible"
     ],
     "mark_subscriber_links": true,
-    "discovery_per_category": true
+    "discovery_per_category": false,
+    "discovery_note": "Retired 2026-10-18 in favour of signal feeds and the per-source tally on the cuts page."
   },
   "editorial": {
     "two_axes": true,
@@ -194,5 +271,9 @@
   "category_scope_notes": {
     "finance-and-economics": "Give room to the financing of the AI build-out: debt loads at AI infrastructure companies, bond and credit-default-swap moves, hyperscaler capital spending, and the market's exposure to it. Owner's standing interest, 2026-10-17.",
     "business": "Same emphasis as Finance and economics on the AI build-out and its risks, from the company side: capex, contracts, concentration, and who bears the losses if demand slows."
+  },
+  "source_roles": {
+    "agenda": "Sets what is significant today. The editor ranks from these desks' judgment.",
+    "signal": "Corroborates and widens the aperture. Items are candidates like any other, judged on consequence; a story only these feeds surfaced is the measure of what the agenda missed. Added 2026-10-18 to replace web-search discovery, after AP, Reuters and the BBC proved unreachable to the search tool. AP and Reuters publish no usable feed."
   }
 }

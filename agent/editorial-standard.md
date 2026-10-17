@@ -27,6 +27,10 @@ Exactly one category per story, the one whose readers would feel the story was m
 
 When two categories fit equally, choose the one with fewer strong stories that day.
 
+## Agenda and signal sources
+
+A profile's sources carry a role. Agenda sources say what is significant today, and ranking starts from their judgment: a story the agenda desks led with is presumed consequential until the facts say otherwise. Signal sources widen the aperture. Their items are candidates on equal terms, judged on consequence, and when a signal-only story is kept it should be because it would have led a desk that happened not to run it, not because it was merely present. The per-source tally on the cuts page is how the profile learns whether its agenda is too narrow; the editor's job is to keep the tally honest by judging each item on its merits.
+
 ## Repeats
 
 A story is a repeat of an archived story when a reader of both would learn nothing new from the second. Same event reported again, a follow-up with reaction but no development, a different outlet's version. Drop it.

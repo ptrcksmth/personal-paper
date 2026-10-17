@@ -341,6 +341,28 @@ async function cutsPage(env, profile, date) {
     `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note
      FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY category, id`
   ).bind(...runs).all();
+  // Per-source tally: fetched, duplicates of another feed, kept, and kept with this source as the sole surfacer.
+  const byRef = Object.fromEntries(results.map((c) => [c.ref, c]));
+  const collapsedInto = new Map();
+  for (const c of results) if (c.collapsed_into) (collapsedInto.get(c.collapsed_into) || collapsedInto.set(c.collapsed_into, []).get(c.collapsed_into)).push(c);
+  const tally = new Map();
+  for (const c of results) {
+    const src = c.source || "unknown";
+    const t = tally.get(src) || tally.set(src, { source: src, total: 0, duplicates: 0, kept: 0, sole: 0 }).get(src);
+    t.total++;
+    if (c.stage === "collapsed") t.duplicates++;
+    if (c.stage === "kept") {
+      t.kept++;
+      const pub = (x) => String(x || "").split(" / ")[0];
+      const others = (collapsedInto.get(c.ref) || []).filter((d) => pub(d.source) !== pub(c.source));
+      if (!others.length) t.sole++;
+    }
+  }
+  const sources = [...tally.values()].sort((a, b) => b.kept - a.kept || b.total - a.total);
+  const sourcesBlock = sources.length ? `<section class="sources"><h2>Sources <span class="count">${sources.length}</span></h2>
+    <div class="scrollx"><table><thead><tr><th>Source</th><th>Items</th><th>Duplicates</th><th>Kept</th><th>Sole source</th></tr></thead><tbody>
+    ${sources.map((t) => `<tr><td>${esc(t.source)}</td><td>${t.total}</td><td>${t.duplicates}</td><td>${t.kept}</td><td>${t.sole}</td></tr>`).join("")}</tbody></table></div>
+    <p class="meta">Duplicates: items the same as another feed's item. Sole source: kept stories no other publisher surfaced.</p></section>` : "";
   const labels = { kept: "Kept", "not-kept": "Read, not kept", "not-shortlisted": "Not shortlisted", deprioritized: "Deprioritized", repeat: "Repeats", collapsed: "Collapsed into another candidate" };
   const order = ["not-kept", "not-shortlisted", "deprioritized", "repeat", "collapsed", "kept"];
   const groups = Object.fromEntries(order.map((s) => [s, results.filter((c) => c.stage === s)]));
@@ -357,6 +379,7 @@ async function cutsPage(env, profile, date) {
     <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Cuts · ${esc(date)} · ${results.length} candidates${runs.length > 1 ? ` · ${runs.length} runs` : ""}</p></header>
     <p class="lede">Every candidate the editor considered for this edition, by the stage it left at. Flag anything you would have run; the editor reads flags at the start of its next run.</p>
     <p id="flagmsg" class="meta" hidden>This browser is not signed in as the owner. Open your owner link once on this device, then flag again.</p>
+    ${sourcesBlock}
     ${sections || "<p>No candidate record for this edition.</p>"}
     <script>
     (function(){
@@ -607,6 +630,7 @@ details.story .body{padding:0 0 1rem} details.story .body p{margin:.35rem 0 .5re
 .cuts{list-style:none;padding:0;margin:0} .cut{display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid var(--line);padding:.6rem 0} .cut-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem} .cut-title{line-height:1.3} .reason{font-size:14px;color:var(--muted)}
 button.flag{font:inherit;font-size:14px;padding:.35rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--fg);cursor:pointer;flex:none;min-height:36px} button.flag[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)} .flagged .cut-title{font-weight:700}
 .tokenbox{display:none}
+.sources{margin:1rem 0 1.5rem} .scrollx{overflow-x:auto} .sources table{border-collapse:collapse;width:100%;font-size:14px} .sources th,.sources td{text-align:left;padding:.35rem .6rem;border-bottom:1px solid var(--line)} .sources td:nth-child(n+2),.sources th:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums}
 a:focus-visible,summary:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style></head><body><main>${body}</main></body></html>`;
 }
