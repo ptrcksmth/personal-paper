@@ -3,6 +3,7 @@
 // Storage is D1, bound as env.DB. Schema in hosted/schema.sql.
 
 import { marked } from "marked";
+import { ImageResponse, loadGoogleFont } from "workers-og";
 
 function slugify(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
@@ -57,6 +58,7 @@ export default {
       if ((m = path.match(/^\/([a-z0-9-]+)\/flags\.json$/))) return flagsJson(env, m[1], url);
       if ((m = path.match(/^\/([a-z0-9-]+)\/(\d{4}-\d{2}-\d{2})\/cuts\.json$/))) return cutsJson(env, m[1], m[2]);
       if ((m = path.match(/^\/([a-z0-9-]+)\/(\d{4}-\d{2}-\d{2})\/cuts$/))) return cutsPage(env, m[1], m[2]);
+      if ((m = path.match(/^\/([a-z0-9-]+)\/(\d{4}-\d{2}-\d{2})\/card\.png$/))) return cardPng(request, env, m[1], m[2]);
       if ((m = path.match(/^\/([a-z0-9-]+)\/(\d{4}-\d{2}-\d{2})$/))) return editionPage(env, m[1], m[2]);
       if ((m = path.match(/^\/([a-z0-9-]+)$/))) return editionPage(env, m[1], null);
       return notFound();
@@ -482,11 +484,46 @@ async function editionPage(env, profile, date) {
     title: `${p.name} · ${longDate}`,
     description: topList.map((t, i) => `${i + 1}. ${t.headline || ""}`).join("  "),
     url: `https://personalpaper.org/${profile}/${e.date}`,
-    image: (topStories.find((x) => x.image_url) || {}).image_url || null,
+    image: `https://personalpaper.org/${profile}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
   };
   return html(page(`${p.name} · ${e.date}`,
     `<p class="meta nav">${links}</p><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
      ${top}${toc}${sections}${closing}<p class="meta nav">${links}</p>`, share));
+}
+
+// The share card: masthead, date, and the three top headlines drawn into a 1200x630 PNG.
+async function cardPng(request, env, profile, date) {
+  const cache = caches.default;
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+  if (!p) return notFound();
+  const e = await env.DB.prepare(`SELECT date, today FROM editions WHERE profile_id = ? AND date = ?`).bind(profile, date).first();
+  if (!e) return notFound();
+  const heads = (safeJson(e.today) || []).map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).slice(0, 3);
+  const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const text = `PERSONALPAPERpersonalpaper.org${p.name}${longDate}${heads.join("")}0123456789.,:;'’“”"-–—()&$%!?`;
+  const [bold, regular] = await Promise.all([
+    loadGoogleFont({ family: "Lexend", weight: 700, text }),
+    loadGoogleFont({ family: "Lexend", weight: 400, text }),
+  ]);
+  const size = heads.reduce((n, h) => n + h.length, 0) > 190 ? 30 : 34;
+  const item = (h, i) => `<div style="display:flex;align-items:flex-start;margin-top:18px">
+      <div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:20px;background:#1e1c19;color:#f6f4ef;font-size:22px;font-weight:700;margin-right:18px;flex-shrink:0">${i + 1}</div>
+      <div style="display:flex;font-size:${size}px;line-height:1.25;font-weight:700;color:#1e1c19">${esc(h)}</div></div>`;
+  const html = `<div style="display:flex;flex-direction:column;width:1200px;height:630px;background:#f6f4ef;padding:52px 60px 44px;font-family:Lexend">
+    <div style="display:flex;font-size:18px;letter-spacing:3px;color:#8a2a1b;font-weight:700">PERSONALPAPER</div>
+    <div style="display:flex;align-items:baseline;margin-top:6px"><div style="display:flex;font-size:46px;font-weight:700;color:#1e1c19">${esc(p.name)}</div><div style="display:flex;font-size:24px;color:#6b665d;margin-left:22px;font-weight:400">${esc(longDate)}</div></div>
+    <div style="display:flex;height:3px;background:#1e1c19;margin-top:16px"></div>
+    <div style="display:flex;flex-direction:column;margin-top:12px">${heads.map(item).join("")}</div>
+    <div style="display:flex;margin-top:auto;font-size:20px;color:#6b665d;font-weight:400">personalpaper.org</div>
+  </div>`;
+  const res = new ImageResponse(html, { width: 1200, height: 630, format: "png", fonts: [
+    { name: "Lexend", data: bold, weight: 700, style: "normal" }, { name: "Lexend", data: regular, weight: 400, style: "normal" },
+  ] });
+  const out = new Response(res.body, { status: 200, headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+  await cache.put(request, out.clone());
+  return out;
 }
 
 async function archivePage(env, profile) {

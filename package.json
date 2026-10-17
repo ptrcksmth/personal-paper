@@ -29,7 +29,8 @@
     "workerd@1.20261012.1": true
   },
   "dependencies": {
-    "marked": "^16.4.1"
+    "marked": "^16.4.1",
+    "workers-og": "^0.0.27"
   },
   "private": true
 }
