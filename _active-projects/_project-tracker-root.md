@@ -17,7 +17,7 @@ A thread running on its own clock with no directory drops the arrow and path. --
 - **Label** (surfaced YYYY-MM-DD, session or source): what it is, the current read, the first step -->
 
 - **Incremental sources** (from the founding brief, 2026-10-17): add sources one at a time after the concept and format are proven, each with a recorded reason. Named in the brief: sources specific to the owner's interests, NYT and Economist full text, the owner's LinkedIn feed, email newsletters. First step: the v2.1 project's SFL carries the mechanism (agenda-source evolution, newsletter inbox, directed surfacing).
-- **v2.2, the owner's private profile and the first weighted view** (from the vision, 2026-10-17): opens when v2.1 meets its success criteria. First step: a PRD citing v2.1's.
+- **v2.2, the owner's private profile and the first weighted view** (from the vision, 2026-10-17): opens when v2.1 meets its success criteria. Pairs with sign-in (GitHub OAuth, flags per user), since identity is what private profiles and reader signals both need. First step: a PRD citing v2.1's.
 
 ## Someday Maybe
 

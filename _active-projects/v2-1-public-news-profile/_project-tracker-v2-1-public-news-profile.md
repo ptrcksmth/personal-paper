@@ -14,6 +14,7 @@
 
 ## SFL
 
+- **Sign-in with GitHub (Google later), flags recorded per user** (owner, 2026-10-17; paired with private profiles in v2.2): OAuth in the Worker with a users table and a flags table keyed by user; the owner's flags stay the eval signal, other readers' flags become reader signals and counts; the owner link and cookie retire. Needs a GitHub OAuth app (client id and secret). Cloudflare Access considered and set aside: free only to 50 users and built for gating, not public sign-in.
 - **Weekly flag review** (2026-10-17): after two weeks, count the owner's flags by exit stage and category, and decide which rule or profile setting to change. First step: a session that reads `/<profile>/flags.json` and the cuts records.
 - **Formatting pass: images, fonts, layout** (owner, 2026-10-17): preview images from the coverage page's metadata as credited thumbnails with a fallback; font and layout improvements for scanning on the iPad. Held until after the cuts page.
 - **Edition increment for multiple runs per day** (owner, 2026-10-17): keep date URLs; add an incrementor when a second edition is produced on the same day.
