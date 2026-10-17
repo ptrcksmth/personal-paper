@@ -59,7 +59,7 @@ agent/
   instructions.md         what a run does, step by step (the product)
   editorial-standard.md   what the judgment means in practice
   cover-brief.md          the brief for coverage subagents
-  tools/                  deterministic helpers: feed fetch, environment client
+  tools/                  deterministic helpers: feed fetch, page fetch, environment client
 hosted/
   worker/index.js         the Cloudflare Worker: registry, write API, pages, share cards
   schema.sql              the tables

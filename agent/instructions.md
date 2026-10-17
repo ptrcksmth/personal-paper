@@ -19,6 +19,7 @@ Tools, all deterministic, in `agent/tools/`:
 
 - `node agent/tools/fetch_feeds.mjs <profile>` fetches every agenda feed within its window and writes `out/candidates.json`.
 - `node agent/tools/pp.mjs <command> ...` reads from and writes to the hosted environment. Its header lists the commands.
+- `node agent/tools/fetch_page.mjs <url>` fetches an article page as an ordinary browser and returns title, publisher, published time, preview image and text as JSON. For hosts that refuse the WebFetch tool but are not paywalled, the Guardian and the BBC among them.
 
 Web search and web fetch are your tools for discovery and coverage. In a cloud environment, outbound requests go through a proxy; the tools detect this and configure Node for it on their own, so run them as written. If a tool reports HTTP 403 on every feed or 401 on a write, the proxy is the first suspect: check that `HTTPS_PROXY` is set and that the environment holds the write credential as a network secret for the host. If a subagent facility is available, use it for coverage reads (step 5) with a cheaper model, in parallel. If not, do them sequentially.
 

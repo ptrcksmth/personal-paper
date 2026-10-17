@@ -17,4 +17,10 @@ Return ONLY a JSON array, one object per candidate, in this shape:
   "notes": "<anything the editor should know: the story is older than it looks, the event developed further, conflicting reports, etc.>"
 }
 
+Fetchability, learned from the first runs. The WebFetch tool is refused by nytimes.com, economist.com, wsj.com, theguardian.com, bbc.com, bbc.co.uk, apnews.com and reuters.com. For theguardian.com, bbc.co.uk, bbc.com and any other host that refuses WebFetch but is not a paywall, use the repository's page tool instead, which fetches as an ordinary browser and returns the title, publisher, published time, preview image and article text as JSON:
+
+    node agent/tools/fetch_page.mjs "<url>"
+
+A fetch counts against the budget whichever tool made it. nytimes.com, economist.com, wsj.com and ft.com are paywalled or bot-walled and return nothing useful either way; do not spend a fetch on them. Pages that have read in full with WebFetch: aljazeera.com, npr.org and its member stations, abcnews.com and other outlets carrying AP or Reuters wire copy, thenationalnews.com, khaleejtimes.com, cp24.com, thewrap.com, internazionale.it, nature.com, quantamagazine.org. When a search result is on a blocked host, look for the same event on a fetchable one before giving up.
+
 If you cannot find readable coverage, set status "headline-only", chosen to the agenda source's link, and facts to what the headline and description support. Be fast: budget about two minutes per candidate.
