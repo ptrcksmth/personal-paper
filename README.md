@@ -1,8 +1,10 @@
 # PersonalPaper
 
-**A news editor you can read the mind of.** Every night an agent reads the agenda set by publications you trust, finds the best coverage of each story anywhere on the web, writes a short edition of summaries linked to their sources, and publishes it. Then it shows you everything it considered and why it cut what it cut.
+**A news editor just for you:** an agent that collects news from sources you define, finds the best coverage for each story, and writes a short daily edition. Transparent about what it found, kept, and featured, showing everything it considered and what it cut.
 
-The first public edition is at **[personalpaper.org](https://personalpaper.org)**: global and U.S. news, with the New York Times and the Economist setting the agenda, organized by the Economist's sections, two or three stories in each.
+Personal Paper has intelligent defaults with an expanding list of public news feeds, starting with World and U.S. news seeded by headlines from the Economist and the NY Times. Read it at **[personalpaper.org](https://personalpaper.org)**.
+
+It's designed for anyone to define their own sources, and to then publish your news publicly or privately in your own hosting environment.
 
 ## Why
 
