@@ -379,8 +379,8 @@ async function cutsPage(env, profile, date) {
     <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Cuts · ${esc(date)} · ${results.length} candidates${runs.length > 1 ? ` · ${runs.length} runs` : ""}</p></header>
     <p class="lede">Every candidate the editor considered for this edition, by the stage it left at. Flag anything you would have run; the editor reads flags at the start of its next run.</p>
     <p id="flagmsg" class="meta" hidden>This browser is not signed in as the owner. Open your owner link once on this device, then flag again.</p>
-    ${sourcesBlock}
     ${sections || "<p>No candidate record for this edition.</p>"}
+    ${sourcesBlock}
     <script>
     (function(){
       var msg=document.getElementById('flagmsg');
@@ -518,12 +518,13 @@ async function editionPage(env, profile, date) {
     return `<section class="cat-section"><h2 class="cat" id="cat-${g.id}"><span>${esc(g.name)}</span><span class="count">${countLabel}</span></h2>${now.map(storyHtml).join("")}${earlierBlock}</section>`;
   }).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
-  const links = [
+  const navLinks = (withCuts) => [
     nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
     `<a href="/${profile}">latest</a>`,
     nav.next ? `<a href="/${profile}/${nav.next}">${nav.next} →</a>` : "",
-    `<a href="/${profile}/${e.date}/cuts">cuts</a>`, `<a href="/${profile}/archive">archive</a>`, `<a href="/">all profiles</a>`,
+    withCuts ? `<a href="/${profile}/${e.date}/cuts">cuts</a>` : "", `<a href="/${profile}/archive">archive</a>`, `<a href="/">all profiles</a>`,
   ].filter(Boolean).join(" · ");
+  const topLinks = navLinks(false), bottomLinks = navLinks(true);
   const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
   const topStories = topList.map((t) => (t.story_id && byId[t.story_id]) || stories.find((x) => x.headline === t.headline)).filter(Boolean);
   const share = {
@@ -533,8 +534,8 @@ async function editionPage(env, profile, date) {
     image: `https://personalpaper.org/${profile}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
   };
   return html(page(`${p.name} · ${e.date}`,
-    `<div class="topbar"><p class="meta nav">${links}</p><a href="/" class="wordmark">Personal Paper</a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
-     ${top}${toc}${sections}${closing}<p class="meta nav">${links}</p>`, share));
+    `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark">Personal Paper</a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
+     ${top}${toc}${sections}${closing}<p class="meta nav">${bottomLinks}</p>`, share));
 }
 
 // The share card: masthead, date, and the three top headlines drawn into a 1200x630 PNG.
