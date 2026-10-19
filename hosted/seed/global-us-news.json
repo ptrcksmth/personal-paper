@@ -4,7 +4,7 @@
   "visibility": "public",
   "maintainer": "Patrick",
   "description": "The day's significant news, worldwide and in the United States, as surfaced by the New York Times, the Economist and the Wall Street Journal, organized by the Economist's sections, with the top two or three stories in each, summarized and linked.",
-  "cadence": "daily, run at 05:05 America/New_York (09:05 UTC in daylight time)",
+  "cadence": "twice daily, runs at 05:05 and 17:05 America/New_York (09:05 and 21:05 UTC in daylight time); the later run is the edition for the day and earlier runs fold beneath it",
   "edition_size": "2 to 3 stories per category unless the category sets max_stories; a category with nothing significant is omitted",
   "categories": [
     {
@@ -275,7 +275,7 @@
           "url": "https://www.technologyreview.com/feed/"
         }
       ],
-      "note": "Added 2026-10-18 after the Science and technology category ran empty on a night when its only candidates were Economist analysis pieces. 72-hour window because these publish a few items a day."
+      "note": "Added 2026-10-17 after the Science and technology category ran empty on a night when its only candidates were Economist analysis pieces. 72-hour window because these publish a few items a day."
     }
   ],
   "coverage": {
@@ -304,6 +304,6 @@
   },
   "source_roles": {
     "agenda": "Sets what is significant today. The editor ranks from these desks' judgment. Three desks: the New York Times, the Economist, the Wall Street Journal.",
-    "signal": "Corroborates and widens the aperture. Items are candidates like any other, judged on consequence; a story only these feeds surfaced is the measure of what the agenda missed. Added 2026-10-18 to replace web-search discovery, after AP, Reuters and the BBC proved unreachable to the search tool. AP and Reuters publish no usable feed."
+    "signal": "Corroborates and widens the aperture. Items are candidates like any other, judged on consequence; a story only these feeds surfaced is the measure of what the agenda missed. Added 2026-10-17 to replace web-search discovery, after AP, Reuters and the BBC proved unreachable to the search tool. AP and Reuters publish no usable feed."
   }
 }

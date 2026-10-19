@@ -502,11 +502,6 @@ async function editionPage(env, profile, date) {
       const h = esc(t.headline || s?.headline || "");
       return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(catName[s.category] || s.category)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
     }).join("")}</ol></section>` : "";
-  const toc = groups.length ? `<nav class="toc"><h2>In this edition</h2>${groups.map((g) => {
-    const now = runCount > 1 ? g.stories.filter(isLatest) : g.stories;
-    const earlierN = g.stories.length - now.length;
-    return `<div class="toc-group"><p class="toc-cat"><a href="#cat-${g.id}">${esc(g.name)}</a> <span class="count">${now.length}${earlierN ? ` + ${earlierN} earlier` : ""}</span></p><ul>${now.map((s) => `<li><a href="#${sid(s)}">${esc(s.headline)}</a></li>`).join("")}</ul></div>`;
-  }).join("")}</nav>` : "";
   const storyHtml = (s) => `
       <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
       <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${readMore(s)}</div></details>`;
@@ -535,7 +530,7 @@ async function editionPage(env, profile, date) {
   };
   return html(page(`${p.name} · ${e.date}`,
     `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark">Personal Paper</a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
-     ${top}${toc}${sections}${closing}<p class="meta nav">${bottomLinks}</p>`, share));
+     ${top}${sections}${closing}<p class="meta nav">${bottomLinks}</p>`, share));
 }
 
 // The share card: masthead, date, and the three top headlines drawn into a 1200x630 PNG.
@@ -631,10 +626,7 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .top li:first-child{border-top:0}
 .top li::before{content:counter(top);position:absolute;left:0;top:.6rem;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--fg);color:var(--bg);font-size:13px;font-weight:700;display:grid;place-items:center}
 .top li a{font-weight:700;text-decoration:none;line-height:1.3;display:block}
-.toc{margin:0 0 1.6rem;border:1px solid var(--line);border-radius:8px;font-size:15px;overflow:hidden}
-.toc h2{margin:0;padding:.6rem 1rem .4rem;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.toc-group{padding:.55rem 1rem .6rem;background:var(--panel)} .toc-group:nth-child(odd){background:var(--stripe)}
-.toc-cat{margin:0 0 .2rem;font-weight:700} .toc ul{margin:0;padding-left:1.1rem} .toc li{margin:.18rem 0;line-height:1.4} .toc a{text-decoration:none} .count{color:var(--muted);font-weight:400;font-size:13px}
+.count{color:var(--muted);font-weight:400;font-size:13px}
 .cat-section{margin-top:2.4rem}
 h2.cat{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 .3rem;padding-top:.5rem;border-top:2px solid var(--fg);display:flex;justify-content:space-between;align-items:baseline}
 details.story{border-top:1px solid var(--line)} details.story:last-child{border-bottom:1px solid var(--line)}
