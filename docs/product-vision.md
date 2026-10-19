@@ -2,7 +2,7 @@
 
 **Owner**: Patrick
 **Date**: 2026-10-17
-**Status**: Draft 4 for validation. Supersedes the v1 goals in `_explorations/2026-10-17-v2-vision/v1-goals-extraction — Claude — 2026-10.md` where they conflict.
+**Status**: Draft 4 for validation; v2.1 built against it. Section 16 appended 2026-10-19 at the owner's direction, recording an evolution of the framing; sections 1 to 15 stand as written. Supersedes the v1 goals in `_explorations/2026-10-17-v2-vision/v1-goals-extraction — Claude — 2026-10.md` where they conflict.
 **Inputs**: `docs/product-vision-inputs.txt` (owner's brief), `_explorations/2026-10-17-v2-vision/v1-goals-extraction — Claude — 2026-10.md` (v1 post-mortem), owner's feedback on drafts 1 to 3.
 **Naming**: "v2" is the vision. "v2.1" is the initial release built against it.
 **Scope of this document**: what the product is and why. System architecture, runtime, storage, and rendering are PRD decisions and are deliberately absent here.
@@ -281,3 +281,28 @@ Not in the budget: any input beyond search, fetch, and the pointer list; the bro
 6. How the owner receives a failure signal from the operator role before notifications exist.
 7. Model choice and the cost ceiling per edition.
 8. Whether the project is open-sourced, and if so how the private profile stays private.
+
+## 16. Evolution (2026-10-19): one surface for two modes of consumption
+
+Appended at the owner's direction after two days of reading v2.1 editions. It extends the problem statement in section 1 and records where the product may go. It does not change the one-sentence product for v2.1, and it contains no architecture; each incarnation below is a feature with its own PRD when it is taken up.
+
+**The reframing.** PersonalPaper is a way to reclaim attention. Its scope is then a filter on all of the owner's media consumption, with news as the first input. The measure of the product becomes how much of that consumption runs through the paper, and how much of the rest the owner no longer opens. The two-week criterion in section 14, reading the edition in preference to the NYT app for the same ten minutes, is the narrow form of that measure.
+
+**Two modes of consumption.** Media is consumed in two modes. *Directed consumption* asks "what is important in the world today about [x]?" *Undirected consumption* asks "what is interesting or fun?" Platforms are paid for engagement, so most media is trending toward the second mode, and the second mode is where the feeds that trade volume for distraction (section 1) do their work. The owner wants one surface that serves both modes on his own terms. These are modes of consumption; the two modes of surfacing in section 10, scheduled and directed, describe how the agent comes to know what to look for, and either can serve either mode of consumption.
+
+**What the reframing keeps.** The story stays the central unit: a book, a film, a series or a video is a story, and its reviews are its coverage. Sources inform what the agent looks for and never constrain where coverage comes from; for entertainment the agenda role is held by critics, lists and chosen creators rather than news desks. The profile model generalizes without change: categories, agenda sources, a deprioritize list and weights, with the owner's view stacking profiles. Directed surfacing is the capture mechanism for both modes: a friend's recommendation, a found link, "more like this" on something watched.
+
+**What the reframing changes.** The agent becomes a filter as well as an editor. An editor is trusted on what it chose; a filter is also trusted on what it withheld, which is a stronger claim, and the cuts page is the only place the owner can audit it. Success criteria for later releases measure attention reclaimed, time and opens, through the signals the paper can observe: what the owner expands, clicks through to, flags and directs. The one-sentence product in section 2 says "news stories"; whether it generalizes to media items is the open question this section leaves to the owner, and the vision reopens if the sentence changes.
+
+**A personal recommendation algorithm.** Extending scope to entertainment, books and their reviews, film, television and short-form video, means the owner runs a recommender whose objective he writes down in a profile he can read, in place of trusting Netflix, YouTube or another platform whose recommender optimizes for the platform's engagement on behavior observed inside its walls. Three things follow. The signal is thin: a platform sees thousands of implicit signals a month, the paper sees tens, so the result is a critic-led system with the owner's corrections on top, closer to a well-read friend than to a feed, and the design question is how few ratings the owner can give and still get a useful result. Short-form video has no review ecosystem and its value lies in the platform's own ranking, which the paper cannot reach and would not want to reproduce; the paper's move there is substitution, a chosen set of creators on a set cadence, with the platform feed left closed. Film and television carry an availability question a news story does not, where a work is streaming tonight, and a recommendation without that answer sends the owner back through the platform's front door.
+
+**Potential incarnations.** Recorded as possibilities, in no fixed order; each is tracked in the project's SFL and becomes a PRD when taken up.
+
+- *Editions by cadence and mode.* A morning edition for directed consumption, the news. A second daily run, in place since 2026-10-19, for what the afternoon added. A weekend edition for undirected consumption, longer and slower: analysis (the Economist's weekly batch, Stratechery and its kind) and books.
+- *Entertainment profiles.* Books, with critics' desks and lists as agenda and reviews as coverage. Film and television, with an availability lookup as part of coverage. Chosen video creators, surfaced on a cadence as the substitute for the platform feed. Each a profile in the registry, stacked under the owner's view by weight.
+- *One surface.* The edition page holds both modes with a short surface on top and depth on tap, the fold v2.1 built. Open: whether one page holds both modes or each mode has its own edition on the same surface and cadence.
+- *The taste record.* Expands, click-throughs, flags and direction entries as the owner's own signal set, inspectable and editable, the data a recommender needs and the data a platform keeps for itself.
+- *The capture point.* The browser extension of section 10, as the way a recommendation or a found item enters from anywhere, including places the agent cannot see.
+
+**Order.** Sign-in and the taste signals first, since an entertainment profile has no value without them (v2.2). Then the weekend edition with analysis and books, which needs no new tooling. Then film and television once an availability lookup exists. Short-form video by substitution whenever a creator list is worth maintaining.
+
