@@ -136,7 +136,7 @@ Write `out/stories.json`:
   "id": "<date>-<slug>", "profile_id": "<profile>", "run_id": "<run-id>",
   "category": "<category-id>", "headline": "...", "url": "<best coverage link>",
   "published_at": "<ISO or null>", "surfaced_by": "<Publisher>:<Feed>" ,
-  "coverage": [{"publisher": "...", "url": "...", "read_in_full": true, "paywalled": false}],
+  "coverage": [{"publisher": "...", "url": "...", "title": "<the piece's own headline>", "read_in_full": true, "paywalled": false}],
   "newsworthiness": 0.0, "relevance": 0.0,
   "summary": "...", "why_it_matters": null, "basis": "<publisher of the piece the summary was written from, or headline-only>",
   "directed": false, "related": null,

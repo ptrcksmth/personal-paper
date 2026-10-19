@@ -488,8 +488,13 @@ async function editionPage(env, profile, date) {
   const firstSentence = (t) => { const m = String(t || "").match(/^.*?[.!?](?=\s|$)/); return m ? m[0] : String(t || ""); };
   const publisherOf = (s) => { const c = (s.coverage || []).find((x) => x.url === s.url); return (c?.publisher || s.surfaced_by || "").replace(/\s*\(via [^)]*\)/, ""); };
   const fmtDate = (d) => d ? new Date(String(d).slice(0, 10) + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }) : "";
-  const metaLine = (s) => `<span class="meta">${esc(publisherOf(s))}${s.published_at ? ` · ${esc(fmtDate(s.published_at))}` : ""} · <a href="${esc(s.url)}">read</a>${s.basis === "headline-only" ? ' · <span class="badge">headline only</span>' : ""}${s.directed ? ' · <span class="badge">directed</span>' : ""}</span>`;
-  const alsoLine = (s) => { const others = (s.coverage || []).filter((c) => c.url !== s.url); return others.length ? `<div class="also">Also: ${others.map((c) => `<a href="${esc(c.url)}">${esc(c.publisher)}${c.paywalled ? " (subscriber)" : ""}</a>`).join(" · ")}</div>` : ""; };
+  const metaLine = (s) => `<span class="meta">${esc(publisherOf(s))}${s.published_at ? ` · ${esc(fmtDate(s.published_at))}` : ""}${s.basis === "headline-only" ? ' · <span class="badge">headline only</span>' : ""}${s.directed ? ' · <span class="badge">directed</span>' : ""}</span>`;
+  const readMore = (s) => {
+    const cov = (s.coverage || []).filter((c) => c && c.url);
+    if (!cov.some((c) => c.url === s.url)) cov.unshift({ publisher: publisherOf(s), url: s.url });
+    const list = [...cov.filter((c) => c.url === s.url), ...cov.filter((c) => c.url !== s.url)];
+    return `<div class="more"><p class="more-h">Read more</p><ul>${list.map((c) => `<li><a href="${esc(c.url)}">${esc(c.publisher || "Source")}: ${esc(c.title || s.headline)}</a>${c.paywalled ? ' <span class="badge">subscriber</span>' : ""}</li>`).join("")}</ul></div>`;
+  };
   const sid = (s) => "s-" + slugify(s.id);
   const topList = (safeJson(e.today) || []).map((t) => typeof t === "string" ? { headline: t } : t);
   const top = topList.length ? `<section class="top"><h2>Top stories</h2><ol>${topList.map((t) => {
@@ -504,7 +509,7 @@ async function editionPage(env, profile, date) {
   }).join("")}</nav>` : "";
   const storyHtml = (s) => `
       <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
-      <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${alsoLine(s)}</div></details>`;
+      <div class="body">${metaLine(s)}${s.image_url && s.image_credit ? `<span class="meta"> · photo: ${esc(s.image_credit)}</span>` : ""}<p>${esc(s.summary)}</p>${s.why_it_matters ? `<p class="why"><b>Why it matters:</b> ${esc(s.why_it_matters)}</p>` : ""}${readMore(s)}</div></details>`;
   const sections = groups.map((g) => {
     const now = runCount > 1 ? g.stories.filter(isLatest) : g.stories;
     const earlier = runCount > 1 ? g.stories.filter((s) => !isLatest(s)) : [];
@@ -639,7 +644,7 @@ details.story summary .h{font-weight:700;line-height:1.3} details.story summary 
 details.story[open] summary .l{display:none} details.story[open] summary .h{color:var(--accent)}
 details.story .body{padding:0 0 1rem}
 details.earlier{border-top:1px solid var(--line);margin-top:.2rem} details.earlier>summary{list-style:none;cursor:pointer;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:.55rem 0} details.earlier>summary::-webkit-details-marker{display:none} details.earlier>summary::before{content:"▸ ";} details.earlier[open]>summary::before{content:"▾ ";} details.earlier details.story{margin-left:.6rem} details.story .body p{margin:.35rem 0 .5rem} .why{color:var(--muted)}
-.also{font-size:14px;color:var(--muted);margin-top:.3rem} .also a{color:var(--accent);text-decoration:none}
+.more{margin-top:.6rem;padding-top:.5rem;border-top:1px solid var(--line)} .more-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .3rem!important} .more ul{list-style:none;margin:0;padding:0} .more li{margin:.25rem 0;font-size:15px;line-height:1.4} .more a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted);font-size:15px} .closing h2{color:var(--fg)}
 .lede.p{color:var(--muted)} .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
 .heads{margin:.2rem 0 0;padding-left:1.2rem;color:var(--muted);font-size:.95rem}

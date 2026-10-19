@@ -11,7 +11,7 @@ Return ONLY a JSON array, one object per candidate, in this shape:
   "ref": "<the ref given>",
   "status": "read" | "headline-only",
   "chosen": {"publisher": "...", "url": "...", "published": "<ISO date or null>", "paywalled": false},
-  "coverage": [{"publisher": "...", "url": "...", "read_in_full": true, "paywalled": false}],
+  "coverage": [{"publisher": "...", "url": "...", "title": "<the piece's own headline, as the page or search result shows it>", "read_in_full": true, "paywalled": false}],
   "image": {"url": "<the page's preview image: the og:image or twitter:image meta tag of the piece you read, or null>", "credit": "<the publisher of that page>"},
   "facts": ["<5 to 8 short factual bullets: who, what, numbers, dates, names, quotes with attribution, consequence as reported>"],
   "notes": "<anything the editor should know: the story is older than it looks, the event developed further, conflicting reports, etc.>"
