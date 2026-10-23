@@ -80,3 +80,5 @@ PersonalPaper v1 (January to February 2026) was a Python pipeline that turned ab
 ## License
 
 MIT. Editions and the archive are the agent's own summaries, with attribution and a link to the coverage each was written from, and carry the same license.
+
+The PersonalPaper name, the wordmark and the mark are not covered by the license. A deployment of your own should replace the favicon set in `hosted/public/`, the wordmark in `hosted/worker/index.js`, and the name in the registry.

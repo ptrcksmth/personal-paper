@@ -455,7 +455,7 @@ async function listingPage(env) {
         · ${p.status ? `last run ${esc(p.status)} at ${esc(p.last_run)}` : "no runs yet"}
         · definition v${p.current_version} · <a href="/${p.id}/archive">archive</a> · <a href="/registry/${p.id}.json">registry</a></p>
     </li>`).join("");
-  return html(page("PersonalPaper", `<h1 class="brand"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>PersonalPaper</h1><p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
+  return html(page("PersonalPaper", `<h1 class="brand"><svg class="mark" viewBox="8 8 48 48" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>personal<b>paper</b></h1><p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
 }
 
 async function editionPage(env, profile, date) {
@@ -529,7 +529,7 @@ async function editionPage(env, profile, date) {
     image: `https://personalpaper.org/${profile}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
   };
   return html(page(`${p.name} · ${e.date}`,
-    `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>Personal Paper</a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
+    `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark"><svg class="mark" viewBox="8 8 48 48" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>personal<b>paper</b></a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
      ${top}${sections}${closing}<p class="meta nav">${bottomLinks}</p>`, share));
 }
 
@@ -542,19 +542,20 @@ async function cardPng(request, env, profile, date) {
   if (!p) return notFound();
   const e = await env.DB.prepare(`SELECT date, today FROM editions WHERE profile_id = ? AND date = ?`).bind(profile, date).first();
   if (!e) return notFound();
-  const heads = (safeJson(e.today) || []).map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).slice(0, 3);
+  const heads = (safeJson(e.today) || []).map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).slice(0, 3).map((h) => String(h).replace(/[<>&]/g, ""));
   const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-  const text = `PERSONALPAPERpersonalpaper.org${p.name}${longDate}${heads.join("")}0123456789.,:;'’“”"-–—()&$%!?`;
-  const [bold, regular] = await Promise.all([
+  const text = `personalpaper.org${p.name}${longDate}${heads.join("")}0123456789.,:;'’“”"-–—()&$%!?`;
+  const [bold, regular, slab] = await Promise.all([
     loadGoogleFont({ family: "Lexend", weight: 700, text }),
     loadGoogleFont({ family: "Lexend", weight: 400, text }),
+    loadGoogleFont({ family: "Zilla Slab", weight: 700, text: "personalpaper" }),
   ]);
   const size = heads.reduce((n, h) => n + h.length, 0) > 190 ? 30 : 34;
   const item = (h, i) => `<div style="display:flex;align-items:flex-start;margin-top:18px">
       <div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:20px;background:#1e1c19;color:#f6f4ef;font-size:22px;font-weight:700;margin-right:18px;flex-shrink:0">${i + 1}</div>
-      <div style="display:flex;font-size:${size}px;line-height:1.25;font-weight:700;color:#1e1c19">${esc(h)}</div></div>`;
+      <div style="display:flex;font-size:${size}px;line-height:1.25;font-weight:700;color:#1e1c19">${h}</div></div>`;
   const html = `<div style="display:flex;flex-direction:column;width:1200px;height:630px;background:#f6f4ef;padding:52px 60px 44px;font-family:Lexend">
-    <div style="display:flex;font-size:18px;letter-spacing:3px;color:#8a2a1b;font-weight:700">PERSONALPAPER</div>
+    <div style="display:flex;align-items:center;font-family:'Zilla Slab';font-size:28px;font-weight:700;color:#1e1c19;line-height:1"><div style="display:flex;position:relative;width:26px;height:26px;margin-right:8px;margin-bottom:1px"><div style="display:flex;position:absolute;left:0;top:0;width:26px;height:3.25px;background:#8a2a1b"></div><div style="display:flex;position:absolute;left:0;top:5.96px;width:7.04px;height:20.04px;background:#8a2a1b"></div><div style="display:flex;position:absolute;left:9.48px;top:5.96px;width:7.04px;height:20.04px;background:#8a2a1b"></div><div style="display:flex;position:absolute;left:18.96px;top:5.96px;width:7.04px;height:11.4px;background:#8a2a1b"></div></div><span>personal</span><span style="color:#8a2a1b">paper</span></div>
     <div style="display:flex;align-items:baseline;margin-top:6px"><div style="display:flex;font-size:46px;font-weight:700;color:#1e1c19">${esc(p.name)}</div><div style="display:flex;font-size:24px;color:#6b665d;margin-left:22px;font-weight:400">${esc(longDate)}</div></div>
     <div style="display:flex;height:3px;background:#1e1c19;margin-top:16px"></div>
     <div style="display:flex;flex-direction:column;margin-top:12px">${heads.map(item).join("")}</div>
@@ -562,6 +563,7 @@ async function cardPng(request, env, profile, date) {
   </div>`;
   const res = new ImageResponse(html, { width: 1200, height: 630, format: "png", fonts: [
     { name: "Lexend", data: bold, weight: 700, style: "normal" }, { name: "Lexend", data: regular, weight: 400, style: "normal" },
+    { name: "Zilla Slab", data: slab, weight: 700, style: "normal" },
   ] });
   const out = new Response(res.body, { status: 200, headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
   await cache.put(request, out.clone());
@@ -605,7 +607,7 @@ function page(title, body, share) {
 <title>${esc(title)}</title>${og}
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#151517" media="(prefers-color-scheme: dark)">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&family=Zilla+Slab:wght@700&display=swap">
 <style>
 :root{--bg:#f6f4ef;--panel:#fdfcfa;--stripe:#ece8e0;--fg:#1e1c19;--muted:#6b665d;--line:#d9d4cb;--accent:#8a2a1b;--accent-soft:#f1e3df;--ui:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 @media (prefers-color-scheme:dark){:root{--bg:#151517;--panel:#1d1d20;--stripe:#232327;--fg:#e8e5df;--muted:#9d978e;--line:#2f2e32;--accent:#e07a5f;--accent-soft:#3a2420}}
@@ -617,9 +619,9 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .meta,.date{color:var(--muted);font-size:14px} .meta a{color:var(--accent);text-decoration:none} .nav{margin:.2rem 0}
 .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem}
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.6rem} .topbar .nav{margin:0}
-.wordmark{display:inline-flex;align-items:center;gap:.5em;font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap;line-height:1.5}
-.mark{width:1.1em;height:1.1em;flex:none;fill:currentColor} .wordmark .mark{margin-top:-.08em}
-.brand{display:flex;align-items:center;gap:.4em} .brand .mark{width:.95em;height:.95em;fill:var(--accent)}
+.wordmark,.brand{font-family:"Zilla Slab",Georgia,serif;font-weight:700;color:var(--fg);white-space:nowrap} .wordmark b,.brand b{color:var(--accent);font-weight:inherit}
+.wordmark{font-size:20px;line-height:1.3;text-decoration:none} .brand{letter-spacing:-.01em}
+.mark{width:.9em;height:.9em;vertical-align:baseline;position:relative;top:.2em;margin-right:.3em;fill:var(--accent)}
 .badge{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px;vertical-align:middle}
 .kicker{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-top:.15rem}
 .lede{display:block;color:var(--muted);font-size:.95em;line-height:1.45;margin-top:.1rem}
