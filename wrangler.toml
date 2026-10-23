@@ -12,6 +12,10 @@ routes = [
   { pattern = "personalpaper.org", custom_domain = true }
 ]
 
+# Static assets (favicons, the mark, the web manifest) are served from this directory before the Worker runs.
+[assets]
+directory = "hosted/public"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "personal-paper"

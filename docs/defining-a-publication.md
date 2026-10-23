@@ -91,7 +91,9 @@ Rebuild the seed file so a fresh deployment carries the publication: `node hoste
 
 ## 6. The first edition and after
 
-The next routine fire runs the new publication alongside the others, since the agent runs every profile in the index. The first edition appears at `/<id>/<date>`, with its cuts page at `/<id>/<date>/cuts` showing every candidate and the stage it left at, and the per-source tally at the foot.
+The agent runs every profile in the index only when the run is not given a list, and the routine's prompt is such a list: it named `global-us-news` alone until 2026-10-23, when the second publication's first fire skipped it. The prompt now says every profile in the registry index, one after another, each with its own run record, so a new publication joins the next scheduled fire with no routine change. The first edition appears at `/<id>/<date>`, with its cuts page at `/<id>/<date>/cuts` showing every candidate and the stage it left at, and the per-source tally at the foot.
+
+To produce a first edition on demand, do not fire the whole routine: the edition table is keyed by profile and date, so a second run of an established publication the same day overwrites its edition with one built after the day's stories were dropped as repeats. Create a one-time routine on the same cloud environment instead, with the standard prompt amended to name the new publication only, and clear the connectors it attaches by default (the production routine runs with none).
 
 Read the first editions against three questions: did the deprioritize list hold (what noise got through, from which feed); did each category carry what the scope notes asked for (both story kinds, the right emphasis); and what did the signal feeds surface that the agenda missed. The agent's proposals in each run's closing block answer some of this on their own. Each change is an edit to the JSON and a POST, producing the next version.
 

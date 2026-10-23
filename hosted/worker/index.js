@@ -455,7 +455,7 @@ async function listingPage(env) {
         · ${p.status ? `last run ${esc(p.status)} at ${esc(p.last_run)}` : "no runs yet"}
         · definition v${p.current_version} · <a href="/${p.id}/archive">archive</a> · <a href="/registry/${p.id}.json">registry</a></p>
     </li>`).join("");
-  return html(page("PersonalPaper", `<h1>PersonalPaper</h1><p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
+  return html(page("PersonalPaper", `<h1 class="brand"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>PersonalPaper</h1><p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
 }
 
 async function editionPage(env, profile, date) {
@@ -529,7 +529,7 @@ async function editionPage(env, profile, date) {
     image: `https://personalpaper.org/${profile}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
   };
   return html(page(`${p.name} · ${e.date}`,
-    `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark">Personal Paper</a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
+    `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark"><svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>Personal Paper</a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
      ${top}${sections}${closing}<p class="meta nav">${bottomLinks}</p>`, share));
 }
 
@@ -603,6 +603,8 @@ function page(title, body, share) {
 <meta name="description" content="${esc(share.description)}">` : "";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>${og}
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#151517" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700&display=swap">
 <style>
 :root{--bg:#f6f4ef;--panel:#fdfcfa;--stripe:#ece8e0;--fg:#1e1c19;--muted:#6b665d;--line:#d9d4cb;--accent:#8a2a1b;--accent-soft:#f1e3df;--ui:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
@@ -615,7 +617,9 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .meta,.date{color:var(--muted);font-size:14px} .meta a{color:var(--accent);text-decoration:none} .nav{margin:.2rem 0}
 .masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;border-bottom:2px solid var(--fg);padding-bottom:.5rem;margin-bottom:1rem}
 .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.6rem} .topbar .nav{margin:0}
-.wordmark{font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap;line-height:1.5}
+.wordmark{display:inline-flex;align-items:center;gap:.5em;font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap;line-height:1.5}
+.mark{width:1.1em;height:1.1em;flex:none;fill:currentColor} .wordmark .mark{margin-top:-.08em}
+.brand{display:flex;align-items:center;gap:.4em} .brand .mark{width:.95em;height:.95em;fill:var(--accent)}
 .badge{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px;vertical-align:middle}
 .kicker{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-top:.15rem}
 .lede{display:block;color:var(--muted);font-size:.95em;line-height:1.45;margin-top:.1rem}
