@@ -51,6 +51,7 @@ export default {
       if (method !== "GET" && method !== "HEAD") return notFound();
       if (path === "/owner") return ownerLink(request, env, url);
       if (path === "/") return listingPage(env);
+      if (path === "/about") return aboutPage();
       if ((m = path.match(/^\/([a-z0-9-]+)\/archive\.json$/))) return archiveJson(env, m[1], url);
       if ((m = path.match(/^\/([a-z0-9-]+)\/direction\.json$/))) return directionJson(env, m[1], url);
       if ((m = path.match(/^\/([a-z0-9-]+)\/runs\.json$/))) return runsJson(env, m[1]);
@@ -439,6 +440,40 @@ function safeJson(t) { try { return t ? JSON.parse(t) : null; } catch { return t
 // Pages and feed
 // ---------------------------------------------------------------------------
 
+// The site header shared by the home page and the About page: the brand on the left, the nav on the right.
+function siteHeader(here) {
+  const brand = `<h1 class="brand"><svg class="mark" viewBox="8 8 48 48" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>personal<b>paper</b></h1>`;
+  const nav = here === "about" ? `<a href="/">Home</a>` : `<a href="/about">About</a>`;
+  return `<div class="sitehead">${here === "about" ? `<a href="/" class="brandlink">${brand}</a>` : brand}<p class="meta nav">${nav}</p></div>`;
+}
+
+function aboutPage() {
+  const body = `${siteHeader("about")}
+    <div class="prose">
+    <p>I was tired of my attention being hijacked by infinite scroll.</p>
+    <p>Personal Paper is my attempt to reclaim my attention and become more intentional about my news consumption.</p>
+    <p>There are two ways you can use this:</p>
+    <ol>
+      <li>Read the topics that are posted here. Each topic is currently updated twice daily at 5:05 am and 5:05 pm ET (America/New_York GMT-5, or GMT-4 during daylight saving time).</li>
+      <li>Roll your own and follow news about any topic. Do that by asking your favorite LLM to set it up: <a href="https://github.com/ptrcksmth/personal-paper">github.com/ptrcksmth/personal-paper</a>.</li>
+    </ol>
+    <p>If you roll your own:</p>
+    <ul>
+      <li>You define a topic and how frequently you want to read about it</li>
+      <li>You tell the system which sources to check (or ask it to recommend some)</li>
+      <li>When it runs, it will check those sources and look for other coverage of the stories it finds</li>
+      <li>It will make editorial decisions based on your interests and the extent of coverage of a story</li>
+      <li>Every time it runs, it creates an edition with updated coverage of your topic</li>
+      <li>You can publish your topics here on personalpaper.org or host them anywhere you\u2019d like</li>
+    </ul>
+    </div>`;
+  return html(page("About · PersonalPaper", body, {
+    title: "About PersonalPaper",
+    description: "An attempt to reclaim attention from infinite scroll: topics updated twice daily, or roll your own with the open-source editor.",
+    url: "https://personalpaper.org/about",
+  }));
+}
+
 async function listingPage(env) {
   const { results } = await env.DB.prepare(
     `SELECT p.id, p.name, p.description, p.maintainer, p.current_version,
@@ -455,7 +490,7 @@ async function listingPage(env) {
         · ${p.status ? `last run ${esc(p.status)} at ${esc(p.last_run)}` : "no runs yet"}
         · definition v${p.current_version} · <a href="/${p.id}/archive">archive</a> · <a href="/registry/${p.id}.json">registry</a></p>
     </li>`).join("");
-  return html(page("PersonalPaper", `<h1 class="brand"><svg class="mark" viewBox="8 8 48 48" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>personal<b>paper</b></h1><p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
+  return html(page("PersonalPaper", `${siteHeader("home")}<p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
 }
 
 async function editionPage(env, profile, date) {
@@ -646,6 +681,8 @@ details.earlier{border-top:1px solid var(--line);margin-top:.2rem} details.earli
 .more{margin-top:.6rem;padding-top:.5rem;border-top:1px solid var(--line)} .more-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .3rem!important} .more ul{list-style:none;margin:0;padding:0} .more li{margin:.25rem 0;font-size:15px;line-height:1.4} .more a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted);font-size:15px} .closing h2{color:var(--fg)}
 .lede.p{color:var(--muted)} .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
+.sitehead{display:flex;justify-content:space-between;align-items:center;gap:1rem} .sitehead .nav{margin:0} .brandlink{text-decoration:none}
+.prose{margin-top:1.4rem} .prose p,.prose li{margin:.6rem 0} .prose ol,.prose ul{padding-left:1.4rem} .prose a{color:var(--accent)}
 .heads{margin:.2rem 0 0;padding-left:1.2rem;color:var(--muted);font-size:.95rem}
 .cuts{list-style:none;padding:0;margin:0} .cut{display:flex;gap:.8rem;align-items:flex-start;border-top:1px solid var(--line);padding:.6rem 0} .cut-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem} .cut-title{line-height:1.3} .reason{font-size:14px;color:var(--muted)}
 button.flag{font:inherit;font-size:14px;padding:.35rem .7rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--fg);cursor:pointer;flex:none;min-height:36px} button.flag[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)} .flagged .cut-title{font-weight:700}
