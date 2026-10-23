@@ -1,0 +1,284 @@
+{
+  "id": "climate-physical-risk",
+  "name": "Climate Physical Risk",
+  "visibility": "public",
+  "maintainer": "Patrick",
+  "description": "The physical risks of a changing climate as they land and as they are projected: weather volatility, water restrictions and limited availability, and the economics of both, from the climate desks, the water press, the reinsurance market and the research journals, summarized and linked.",
+  "cadence": "runs with the shared routine, twice daily at 05:05 and 17:05 America/New_York; the later run is the edition for the day and earlier runs fold beneath it. Weekly sources carry longer windows so the research and attribution pieces stay in scope.",
+  "edition_size": "2 to 4 stories per category; a category with nothing significant is omitted",
+  "categories": [
+    { "id": "weather-volatility", "name": "Weather volatility", "weight": 1.0, "max_stories": 4 },
+    { "id": "water", "name": "Water", "weight": 1.0, "max_stories": 4 },
+    { "id": "economics", "name": "Economics", "weight": 1.0, "max_stories": 4 }
+  ],
+  "category_notes": [
+    "Two kinds of story run in every category: direct impacts (what happened, where, to whom, at what cost) and projections (what the models, the insurers, the agencies and the research expect). An edition should carry both kinds where the day offers them; a projection story is ranked on what it changes, not on its novelty.",
+    "Every candidate is assigned to exactly one category. A storm's insured-loss estimate goes to Economics; the storm itself goes to Weather volatility; a drought declaration goes to Water; a study of future drought frequency goes to Water as a projection.",
+    "Weights are all 1.0 at launch, as in the general publication, so a later private view can reweight without changing the shape.",
+    "Registered 2026-10-23 as definition v1 from the source research in the project folder; the owner's six decisions (roles, geography, Google News feeds, a page role, agriculture, cadence) were taken as defaults here and are open."
+  ],
+  "entities": [],
+  "deprioritize": [
+    "energy transition, emissions and net-zero stories without a physical-impact or physical-risk angle",
+    "corporate sustainability and ESG announcements",
+    "climate negotiations and climate politics, unless they change how physical risk is financed or insured",
+    "insurance lines unrelated to catastrophe and property: auto, liability, workers' compensation, life, health",
+    "routine procedural items from water agencies (meeting agendas, comment periods, staff reports) without an allocation, restriction, or shortage decision",
+    "opinion and commentary",
+    "single-event weather coverage with no toll, cost, record, or projection attached"
+  ],
+  "agenda_sources": [
+    {
+      "publisher": "The Guardian",
+      "role": "agenda",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "Extreme weather", "url": "https://www.theguardian.com/world/extreme-weather/rss" },
+        { "name": "Climate crisis", "url": "https://www.theguardian.com/environment/climate-crisis/rss" },
+        { "name": "Water", "url": "https://www.theguardian.com/environment/water/rss" }
+      ],
+      "note": "Daily hard-news judgment on weather events and water worldwide; readable pages; long descriptions. The general publication reads the Guardian's World and US feeds, so repeats across publications are expected and the archive check handles them."
+    },
+    {
+      "publisher": "New York Times",
+      "role": "agenda",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "Climate", "url": "https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml" }
+      ],
+      "note": "The strongest U.S. climate desk; pages unreadable, so its stories run headline-only or from other coverage, as in the general publication."
+    },
+    {
+      "publisher": "Carbon Brief",
+      "role": "agenda",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "All", "url": "https://www.carbonbrief.org/feed/" }
+      ],
+      "note": "The field's reference desk: explainers, attribution and science coverage with sources; about five pieces a week."
+    },
+    {
+      "publisher": "Circle of Blue",
+      "role": "agenda",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "All", "url": "https://www.circleofblue.org/feed/" }
+      ],
+      "note": "The water-news desk, global with U.S. depth; about six pieces a week, long descriptions, readable."
+    },
+    {
+      "publisher": "Artemis",
+      "role": "agenda",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "All", "url": "https://www.artemis.bm/feed/" }
+      ],
+      "note": "Catastrophe bonds, reinsurance pricing and loss estimates after every event: the market's read on physical risk, daily, readable."
+    },
+    {
+      "publisher": "Insurance Journal",
+      "role": "agenda",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "National", "url": "https://www.insurancejournal.com/rss/news/national/" }
+      ],
+      "note": "U.S. insurer withdrawals, rate filings and catastrophe losses among much that is out of scope; the deprioritize list excludes the other lines."
+    },
+    {
+      "publisher": "Financial Times",
+      "role": "agenda",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "Climate Capital", "url": "https://www.ft.com/climate-capital?format=rss" }
+      ],
+      "note": "The FT's climate-finance desk; the page tool reads only the standfirst, so stories run headline-only or from other coverage."
+    },
+    {
+      "publisher": "Yale Climate Connections",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "Eye on the Storm", "url": "https://yaleclimateconnections.org/topic/eye-on-the-storm/feed/" },
+        { "name": "All", "url": "https://yaleclimateconnections.org/feed/" }
+      ],
+      "note": "Jeff Masters and Bob Henson on each tropical system and heat event; the main feed adds general pieces."
+    },
+    {
+      "publisher": "World Weather Attribution",
+      "role": "signal",
+      "window_hours": 336,
+      "feeds": [
+        { "name": "Studies", "url": "https://www.worldweatherattribution.org/feed/" }
+      ],
+      "note": "Rapid attribution studies, a few a month; each is a projection story. Two-week window because of the volume."
+    },
+    {
+      "publisher": "NASA Earth Observatory",
+      "role": "signal",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "All", "url": "https://earthobservatory.nasa.gov/feeds/earth-observatory.rss" }
+      ],
+      "note": "Image-led event coverage with the satellite record; good images for the edition."
+    },
+    {
+      "publisher": "NPR",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "Climate", "url": "https://feeds.npr.org/1167/rss.xml" }
+      ]
+    },
+    {
+      "publisher": "BBC",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "Science and Environment", "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml" }
+      ],
+      "note": "Broad; weather events and climate science among general science news."
+    },
+    {
+      "publisher": "Berkeley Earth",
+      "role": "signal",
+      "window_hours": 336,
+      "feeds": [
+        { "name": "All", "url": "https://berkeleyearth.org/feed/" }
+      ],
+      "note": "Monthly global temperature report; a projection source at low volume."
+    },
+    {
+      "publisher": "Maven's Notebook",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "All", "url": "https://mavensnotebook.com/feed/" }
+      ],
+      "note": "The daily California water digest, about 35 items a week: every allocation, board action and report. Most items are procedural and fall to the deprioritize list; the restriction, allocation and shortage decisions are the candidates."
+    },
+    {
+      "publisher": "KUNC",
+      "role": "signal",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "Colorado River", "url": "https://www.kunc.org/tags/colorado-river.rss" }
+      ],
+      "note": "The Colorado River basin's best beat reporting; one or two pieces a week."
+    },
+    {
+      "publisher": "Colorado Sun",
+      "role": "signal",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "Water", "url": "https://coloradosun.com/category/news/environment/water/feed/" }
+      ]
+    },
+    {
+      "publisher": "The Guardian",
+      "role": "signal",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "Drought", "url": "https://www.theguardian.com/environment/drought/rss" }
+      ],
+      "note": "Tag feed; overlaps the Guardian agenda feeds, the feed tool collapses exact duplicates."
+    },
+    {
+      "publisher": "California WaterBlog",
+      "role": "signal",
+      "window_hours": 168,
+      "feeds": [
+        { "name": "All", "url": "https://californiawaterblog.com/feed/" }
+      ],
+      "note": "UC Davis researchers on policy and hydrology; a projection source, about one piece a week."
+    },
+    {
+      "publisher": "Reinsurance News",
+      "role": "signal",
+      "window_hours": 48,
+      "feeds": [
+        { "name": "All", "url": "https://www.reinsurancene.ws/feed/" }
+      ],
+      "note": "Overlaps Artemis, same publisher group, more trade announcements."
+    },
+    {
+      "publisher": "Federal Reserve",
+      "role": "signal",
+      "window_hours": 168,
+      "feeds": [
+        { "name": "FEDS Notes", "url": "https://www.federalreserve.gov/feeds/feds_notes.xml" }
+      ],
+      "note": "Occasional climate-risk notes among monetary ones; judge by title."
+    },
+    {
+      "publisher": "NBER",
+      "role": "signal",
+      "window_hours": 168,
+      "feeds": [
+        { "name": "New working papers", "url": "https://back.nber.org/rss/new.xml" }
+      ],
+      "note": "Working papers on climate damages and adaptation economics appear weekly among all fields; judge by title. The feed carries no dates, so treat every item as inside the window and rely on the archive check for repeats."
+    },
+    {
+      "publisher": "Climate Policy Initiative",
+      "role": "signal",
+      "window_hours": 168,
+      "feeds": [
+        { "name": "All", "url": "https://www.climatepolicyinitiative.org/feed/" }
+      ]
+    },
+    {
+      "publisher": "Nature",
+      "role": "signal",
+      "window_hours": 168,
+      "feeds": [
+        { "name": "Nature Climate Change", "url": "https://www.nature.com/nclimate.rss" },
+        { "name": "Nature Water", "url": "https://www.nature.com/natwater.rss" },
+        { "name": "Nature Sustainability", "url": "https://www.nature.com/natsustain.rss" },
+        { "name": "Nature Reviews Earth and Environment", "url": "https://www.nature.com/natrevearthenviron.rss" }
+      ],
+      "note": "The projection journals. nature.com has challenged the page tool on some days and read on others; when unreadable, run from the abstract in the feed."
+    },
+    {
+      "publisher": "The Conversation",
+      "role": "signal",
+      "window_hours": 72,
+      "feeds": [
+        { "name": "Environment (US)", "url": "https://theconversation.com/us/environment/articles.atom" }
+      ],
+      "note": "Researchers writing up their own projections; readable."
+    },
+    {
+      "publisher": "European Environment Agency",
+      "role": "signal",
+      "window_hours": 168,
+      "feeds": [
+        { "name": "News", "url": "https://www.eea.europa.eu/en/newsroom/news/rss.xml" }
+      ]
+    }
+  ],
+  "coverage": {
+    "search": "unconstrained",
+    "prefer": [ "complete", "authoritative", "accessible" ],
+    "mark_subscriber_links": true,
+    "discovery_per_category": false,
+    "discovery_note": "No web-search discovery, as in the general publication. Google News search feeds for restrictions and insurance were tested and left out at launch because their links cannot be read; see the source research."
+  },
+  "editorial": {
+    "two_axes": true,
+    "summary_length": "2 to 4 sentences",
+    "summary_rule": "original prose, written from coverage the agent read; no verbatim passages beyond a short attributed quote. Where a story carries a number (a toll, a loss estimate, an allocation, a projected change), the number and its source are the point; keep them.",
+    "mark_thin_summaries": true
+  },
+  "evolution": {
+    "mode": "propose"
+  },
+  "category_scope_notes": {
+    "weather-volatility": "Storms, heat, cold, flood, fire, and the swings between them, worldwide, with their tolls and records; and the projections: attribution studies, seasonal outlooks, the monthly climate reports, changes in frequency and intensity. The agencies that publish the outlooks (NOAA, Copernicus, the WMO) have no feeds, so their reports arrive through the desks that cover them.",
+    "water": "Restrictions, rationing, allocations, shortages, aquifer and reservoir levels, snowpack, and the litigation and agreements that divide water, worldwide with the U.S. West in depth because that is where the reporting is; and the projections: basin forecasts, groundwater studies, availability under warming. A restriction or allocation decision outranks a report about one.",
+    "economics": "What physical risk costs and who pays: insured and uninsured losses, insurer withdrawals and rate actions, reinsurance pricing and catastrophe bonds, crop and commodity effects, municipal and sovereign exposure; and the projections: catastrophe models, central-bank and research-institute work, loss reports from the reinsurers. Energy-transition finance is out of scope unless it prices physical risk."
+  },
+  "source_roles": {
+    "agenda": "Sets what is significant today. Seven desks: the Guardian's extreme weather, climate crisis and water feeds; NYT Climate; Carbon Brief; Circle of Blue; Artemis; Insurance Journal; FT Climate Capital.",
+    "signal": "Corroborates and widens the aperture, and carries the projections: the attribution and research sources, the regional water press, the reinsurance trade press. Items are candidates like any other, judged on consequence; a story only these feeds surfaced is the measure of what the agenda missed."
+  }
+}
