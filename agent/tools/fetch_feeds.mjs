@@ -2,6 +2,16 @@
 // Fetch a topic's agenda feeds and write the candidate list.
 //
 // Usage: node agent/tools/fetch_feeds.mjs <topic-id> [--host https://personalpaper.org] [--out out/candidates.json]
+//        [--date YYYY-MM-DD] [--definition file.json]
+// --date is the edition date the date tokens use (default today, UTC); --definition reads a local
+// definition in place of the registry's, for testing.
+//
+// Dated feeds (v2.1.3): a feed URL may carry tokens from the edition date: {yyyy}, {yyyy-N} (N years
+// earlier), {mm}, {dd}. Such a feed is read whole; its window does not apply, since the URL chose the
+// date. A feed marked "page": true is an HTML page: its items are the headings that link to articles
+// on the page's own host, following its next-page link (rel="next", a "next" class, or /page/N/) up to three pages. Page items carry no date or
+// description, and collapse with other items by link only (their titles can repeat). A dated feed
+// that answers 404 has nothing for that date and counts as empty.
 //
 // Reads the topic definition from the hosted environment's registry, fetches every feed in
 // agenda_sources, keeps items published within each source's window_hours, collapses exact
@@ -10,7 +20,7 @@
 //   out/collapsed.json    the duplicates, ready to go into the candidate record as stage "collapsed"
 // Deterministic: no model, no judgment. Exit code 0 even when some feeds fail.
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 // Cloud sandboxes route egress through a proxy that Node's fetch ignores unless told. If a proxy is
 // configured and Node has not been pointed at it, re-run this script with the proxy and the CA bundle set.
@@ -31,6 +41,8 @@ const topicId = args.find((a) => !a.startsWith("--"));
 const opt = (name, dflt) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : dflt; };
 const host = (process.env.PP_HOST || opt("--host", "https://personalpaper.org")).replace(/\/$/, "");
 const out = opt("--out", "out/candidates.json");
+const editionDate = opt("--date", new Date().toISOString().slice(0, 10));
+const localDefinition = opt("--definition", "");
 if (!topicId) { console.error("usage: fetch_feeds.mjs <topic-id> [--host H] [--out F]"); process.exit(2); }
 
 const UA = "PersonalPaper/2.1 (+https://personalpaper.org)";
@@ -79,9 +91,58 @@ async function fetchFeed(url) {
   } finally { clearTimeout(t); }
 }
 
-const reg = await fetch(`${host}/registry/${topicId}.json`, { headers: { "user-agent": UA } });
-if (!reg.ok) { console.error(`registry: HTTP ${reg.status} for ${topicId}`); process.exit(1); }
-const topic = await reg.json();
+// Fill a feed URL's date tokens from the edition date. Returns the URL and whether it carried any.
+function fillDate(url) {
+  const [y, m, d] = editionDate.split("-");
+  let dated = false;
+  const filled = url.replace(/\{(yyyy(?:-(\d+))?|mm|dd)\}/g, (_, k, n) => {
+    dated = true;
+    return k === "mm" ? m : k === "dd" ? d : String(Number(y) - Number(n || 0));
+  });
+  return { url: filled, dated };
+}
+
+// An HTML index page read as a feed: the headings that link to articles on the same host.
+const PAGE_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36";
+async function fetchPage(url) {
+  const items = [], seen = new Set();
+  let next = url;
+  for (let page = 0; next && page < 3; page++) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 20000);
+    let html;
+    try {
+      const res = await fetch(next, { headers: { "user-agent": PAGE_UA, accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8", "accept-language": "en-US,en;q=0.9" }, redirect: "follow", signal: ctrl.signal });
+      if (!res.ok) { if (page === 0) return { error: `HTTP ${res.status}` }; break; }
+      html = await res.text();
+    } catch (e) {
+      if (page === 0) return { error: String(e?.cause?.code || e?.name || e?.message || e) };
+      break;
+    } finally { clearTimeout(t); }
+    const origin = new URL(next).origin;
+    const entry = [...html.matchAll(/<h[1-3][^>]*class="[^"]*entry-title[^"]*"[^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)];
+    const any = entry.length ? entry : [...html.matchAll(/<h[1-3][^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)];
+    for (const [, href, text] of any) {
+      let link; try { link = new URL(decode(href), next).href; } catch { continue; }
+      if (!link.startsWith(origin) || seen.has(link)) continue;
+      seen.add(link);
+      items.push({ title: decode(text).trim(), link, published: null, description: "", categories: [], creator: null, from_page: true });
+    }
+    const n = html.match(/<link[^>]*rel="next"[^>]*href="([^"]+)"/) || html.match(/<a[^>]*class="[^"]*next[^"]*"[^>]*href="([^"]+)"/) ||
+      html.match(new RegExp(`<a[^>]*href="([^"]*/page/${page + 2}/?)"`));
+    next = n ? new URL(decode(n[1]), next).href : null;
+  }
+  return { items };
+}
+
+let topic;
+if (localDefinition) {
+  topic = { version: "local", definition: JSON.parse(readFileSync(localDefinition, "utf8")) };
+} else {
+  const reg = await fetch(`${host}/registry/${topicId}.json`, { headers: { "user-agent": UA } });
+  if (!reg.ok) { console.error(`registry: HTTP ${reg.status} for ${topicId}`); process.exit(1); }
+  topic = await reg.json();
+}
 const def = topic.definition;
 const now = Date.now();
 
@@ -91,13 +152,16 @@ let total = 0, kept = 0;
 for (const source of def.agenda_sources || []) {
   const windowMs = (source.window_hours || 48) * 3600 * 1000;
   for (const feed of source.feeds || []) {
-    const r = await fetchFeed(feed.url);
-    if (r.error) { failures.push({ publisher: source.publisher, feed: feed.name, url: feed.url, error: r.error }); feeds.push({ publisher: source.publisher, feed: feed.name, url: feed.url, error: r.error, items: [] }); continue; }
+    const { url, dated } = fillDate(feed.url);
+    let r = feed.page ? await fetchPage(url) : await fetchFeed(url);
+    // A dated archive with nothing on that date answers 404: an empty feed, not a failure.
+    if (dated && r.error === "HTTP 404") r = { items: [] };
+    if (r.error) { failures.push({ publisher: source.publisher, feed: feed.name, url, error: r.error }); feeds.push({ publisher: source.publisher, feed: feed.name, url, role: source.role || "agenda", error: r.error, items: [] }); continue; }
     total += r.items.length;
-    const inWindow = r.items.filter((it) => !it.published || now - Date.parse(it.published) <= windowMs);
+    const inWindow = dated ? r.items : r.items.filter((it) => !it.published || now - Date.parse(it.published) <= windowMs);
     kept += inWindow.length;
     feeds.push({
-      publisher: source.publisher, feed: feed.name, url: feed.url, role: source.role || "agenda",
+      publisher: source.publisher, feed: feed.name, url, role: source.role || "agenda", dated, page: !!feed.page,
       agenda_only_digest: !!feed.agenda_only_digest,
       fetched: r.items.length, in_window: inWindow.length,
       items: inWindow.map((it, i) => ({ ref: `${slug(source.publisher)}:${slug(feed.name)}:${i}`, ...it })),
@@ -116,7 +180,7 @@ function collapse(feeds) {
   for (const f of feeds) for (const it of f.items) all.push({ it, f });
   const byKey = new Map();
   for (const { it, f } of all) {
-    for (const key of [`l:${normLink(it.link)}`, `t:${normTitle(it.title)}`]) {
+    for (const key of it.from_page ? [`l:${normLink(it.link)}`] : [`l:${normLink(it.link)}`, `t:${normTitle(it.title)}`]) {
       if (key.length < 8) continue;
       (byKey.get(key) || byKey.set(key, []).get(key)).push({ it, f });
     }
@@ -137,7 +201,7 @@ const collapsed = collapse(feeds);
 const unique = kept - collapsed;
 const perFeed = feeds.map((f) => ({ source: `${f.publisher} / ${f.feed}`, role: f.role, in_window: f.in_window || 0, duplicates: f.items.filter((i) => i.duplicate_of).length }));
 const result = {
-  topic: topicId, topic_version: topic.version, host, fetched_at: new Date(now).toISOString(),
+  topic: topicId, topic_version: topic.version, host, edition_date: editionDate, fetched_at: new Date(now).toISOString(),
   counts: { feeds: feeds.length, failed: failures.length, items_fetched: total, items_in_window: kept, collapsed, unique },
   per_feed: perFeed, failures, feeds,
 };

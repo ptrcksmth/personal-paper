@@ -454,7 +454,7 @@ function aboutPage() {
     <p>Personal Paper is my attempt to reclaim my attention and become more intentional about my news consumption.</p>
     <p>There are two ways you can use this:</p>
     <ol>
-      <li>Read the topics that are posted here. Each topic is currently updated twice daily at 5:05 am and 5:05 pm ET (America/New_York GMT-5, or GMT-4 during daylight saving time).</li>
+      <li>Read the topics that are posted here. Topics are updated at 5:05 am and 5:05 pm ET (America/New_York GMT-5, or GMT-4 during daylight saving time), each as often as its definition's cadence says: twice a day for most, once a day for some.</li>
       <li>Roll your own and follow news about any topic. Do that by asking your favorite LLM to set it up: <a href="https://github.com/ptrcksmth/personal-paper">github.com/ptrcksmth/personal-paper</a>.</li>
     </ol>
     <p>If you roll your own:</p>
@@ -469,7 +469,7 @@ function aboutPage() {
     </div>`;
   return html(page("About · PersonalPaper", body, {
     title: "About PersonalPaper",
-    description: "An attempt to reclaim attention from infinite scroll: topics updated twice daily, or roll your own with the open-source editor.",
+    description: "An attempt to reclaim attention from infinite scroll: topics updated daily, or roll your own with the open-source editor.",
     url: "https://personalpaper.org/about",
   }));
 }

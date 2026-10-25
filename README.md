@@ -43,6 +43,7 @@ The two scores on every story are deliberate. **Newsworthiness** is the story's 
 
 ```bash
 npm install
+node agent/tools/due.mjs                               # which topics are due to run now, by cadence
 node agent/tools/fetch_feeds.mjs global-us-news        # the agenda, as the agent sees it
 node agent/tools/pp.mjs topic global-us-news           # the topic definition and version
 node agent/tools/pp.mjs archive global-us-news         # the last fourteen days of stories

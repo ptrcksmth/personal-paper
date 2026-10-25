@@ -11,7 +11,7 @@ Write down, in a sentence or two each, before looking for a single feed:
 - **The subtopics.** Three to twelve names a reader would scan. Each becomes a section with its own id. The general topic uses the Economist's sections; the climate topic uses the owner's three concerns.
 - **The story kinds**, if the topic has more than one. The climate topic runs direct impacts and projections in every subtopic, and the definition says so in the subtopic notes so the editor looks for both.
 - **Geography and emphasis.** Where the reader wants depth, and what is out of scope.
-- **Visibility and cadence.** Only public topics exist today, and all of them run on the shared routine (05:05 and 17:05 Eastern; the later run is the edition, earlier runs fold). A cadence of its own is a system change.
+- **Visibility and cadence.** Only public topics exist today. Every topic runs on the shared routine, which fires at 05:05 and 17:05 Eastern; the topic's cadence says how many of those runs it takes and from what time of day (section 4, since v2.1.3). The latest run of the day is the edition, and earlier runs fold beneath it.
 
 Open a project directory in the working drive for the work (`_active-projects/<slug>/` with a plan and tracker); the research document and the decisions live there.
 
@@ -25,7 +25,7 @@ The agent only sees what feeds carry. Web-search discovery was retired on 2026-1
 
 **Test readability** of one current article per host with `node agent/tools/fetch_page.mjs <url>`. A host that returns a page with text is readable; a 403, a Cloudflare challenge, or a teaser of a few hundred characters is not. This decides whether a desk's stories can run from read coverage or only headline-only, and it feeds the fetchability list in `agent/cover-brief.md`.
 
-**Read the numbers for three things.** Volume: the sum of items a week across the proposed list, against the general topic's 600 a run, says whether the cadence has material and whether a high-volume feed will flood a subtopic. Description length: under 150 characters is a headline and a clause, 300 to 700 is a paragraph, over 2,000 is full text; a topic whose desks carry paragraphs can run well from feeds alone. Recency: a feed whose newest item is months old is dead even if it returns 200.
+**Read the numbers for four things.** Volume: the sum of items a week across the proposed list, against the general topic's 600 a run, says whether the cadence has material and whether a high-volume feed will flood a subtopic. Description length: under 150 characters is a headline and a clause, 300 to 700 is a paragraph, over 2,000 is full text; a topic whose desks carry paragraphs can run well from feeds alone. Recency: a feed whose newest item is months old is dead even if it returns 200. Timing: when each source publishes, against the topic's runs. Take the publication times of a few weeks of items and compare them with the cadence; a source that posts after the run (the aviation topic's anniversary columns post through the morning of the day they mark, after a 05:05 run) is read a day late or not at all. Where the material is tied to a date, a dated archive for that date (this year's and an earlier year's) decouples the run from the source's timing; a feed URL can carry the edition's date for this (section 4). The timing check was added on 2026-10-25 when the aviation topic moved to a morning-only cadence.
 
 **Name the gaps.** Sources with no feed, feeds that are dead, hosts that block. Say what would fill each (a newsletter, a page the tool could fetch on a schedule, a desk that reports on the primary source) so the gap is a decision rather than an omission.
 
@@ -50,14 +50,14 @@ Create `hosted/topics/<id>.json`. The id is the URL slug (`/<id>/<date>`) and mu
 | Field | What it is |
 |---|---|
 | `id`, `name`, `visibility`, `maintainer`, `description` | Identity. `description` is the listing-page blurb and the share card's text |
-| `cadence` | Prose for the reader and the agent; the routine's schedule is set outside the definition |
+| `cadence` | `runs_per_day`, `from` (the first run's time of day, `HH:MM`), `timezone` (default America/New_York) and a prose `note`. The run times are spaced evenly from `from`; `agent/tools/due.mjs` runs a topic when it has made fewer runs today than run times have passed, so a missed run is made up at the next fire and a manual fire does not run a topic twice. A prose cadence, or none, runs at every fire. Since v2.1.3 (`docs/prds/v2.1.3-cadence.md`) |
 | `edition_size` | Prose rule, for example "2 to 4 stories per subtopic; a subtopic with nothing significant is omitted" |
 | `subtopics[]` | `id`, `name`, `weight` (1.0 at launch; exists for later reweighting), optional `max_stories` |
 | `subtopic_notes[]` | Prose the editor reads before assigning subtopics: story kinds, how feeds map to subtopics, anything about the shape |
 | `subtopic_scope_notes{}` | Per subtopic id, what belongs and what outranks what. The most-read field; write it carefully |
 | `entities[]` | Watched entities; empty so far |
 | `deprioritize[]` | What to leave out. Derive it from the feeds chosen: every broad feed brings a kind of noise, and this list names it |
-| `agenda_sources[]` | Every source, agenda and signal alike, with `publisher`, `role`, `window_hours`, `feeds[]` (`name`, `url`, optional `agenda_only_digest`) and `note` |
+| `agenda_sources[]` | Every source, agenda and signal alike, with `publisher`, `role`, `window_hours`, `feeds[]` (`name`, `url`, optional `agenda_only_digest`, optional `page`) and `note`. A feed URL may carry the edition's date as `{yyyy}`, `{yyyy-N}`, `{mm}`, `{dd}`; such a feed is read whole, ignoring the window. `page: true` reads an HTML index page's article headings as items |
 | `coverage` | `search: "unconstrained"`, `prefer: ["complete","authoritative","accessible"]`, `mark_subscriber_links: true`, `discovery_per_subtopic: false` |
 | `editorial` | `two_axes: true`, `summary_length`, `summary_rule`, `mark_thin_summaries: true`. Add subject-specific rules to `summary_rule` (the climate topic says to keep numbers and their sources) |
 | `evolution` | `mode: "propose"`: the agent proposes definition changes in the run's closing block and never edits |
@@ -96,7 +96,7 @@ To produce a first edition on demand, do not fire the whole routine: the edition
 
 Read the first editions against three questions: did the deprioritize list hold (what noise got through, from which feed); did each subtopic carry what the scope notes asked for (both story kinds, the right emphasis); and what did the signal feeds surface that the agenda missed. The agent's proposals in each run's closing block answer some of this on their own. Each change is an edit to the JSON and a POST, producing the next version, and the same session updates the topic's overview (section 7) to match.
 
-If the definition needs something the system does not have (a feed role for pages without feeds, a cadence of its own, search-based discovery, private visibility), that is a system change with its own PRD under `docs/prds/`, and the topic runs without it in the meantime.
+If the definition needs something the system does not have (a source with no page an index can be read from, a run time the routine does not fire at, search-based discovery, private visibility), that is a system change with its own PRD under `docs/prds/`, and the topic runs without it in the meantime.
 
 ## 7. Write the overview
 

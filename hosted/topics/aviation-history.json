@@ -4,23 +4,43 @@
   "visibility": "public",
   "maintainer": "Patrick",
   "description": "A daily paper for a docent at the Steven F. Udvar-Hazy Center: this day in aviation and space history, news of the Smithsonian's National Air and Space Museum on the Mall and at Dulles, and aviation heritage from the restorers, the warbird press and the museums, summarized and linked.",
-  "cadence": "runs with the shared routine, twice daily at 05:05 and 17:05 America/New_York; the later run is the edition for the day and earlier runs fold beneath it. The two daily anniversary columns carry a 24-hour window so that only the edition date's anniversaries are in scope.",
+  "cadence": {
+    "runs_per_day": 1,
+    "from": "05:00",
+    "timezone": "America/New_York",
+    "note": "One edition a day, ready by early morning Eastern time. Anniversary items come from earlier years' dated archives, so the run does not wait on when the columns publish (This Day in Aviation posts through the anniversary morning, Vintage Aviation News at 09:00 ET)."
+  },
   "edition_size": "3 to 5 this-day stories when the sources offer that many; museum stories only when there is news; 2 to 4 aviation heritage stories; a subtopic with nothing significant is omitted",
   "subtopics": [
-    { "id": "this-day", "name": "This day in aviation history", "weight": 1.0, "max_stories": 5 },
-    { "id": "the-museum", "name": "The Air and Space Museum", "weight": 1.0, "max_stories": 4 },
-    { "id": "heritage", "name": "Aviation heritage", "weight": 1.0, "max_stories": 4 }
+    {
+      "id": "this-day",
+      "name": "This day in aviation history",
+      "weight": 1.0,
+      "max_stories": 5
+    },
+    {
+      "id": "the-museum",
+      "name": "The Air and Space Museum",
+      "weight": 1.0,
+      "max_stories": 4
+    },
+    {
+      "id": "heritage",
+      "name": "Aviation heritage",
+      "weight": 1.0,
+      "max_stories": 4
+    }
   ],
   "subtopic_notes": [
     "The reader is a docent at the Udvar-Hazy Center, who talks with visitors about the aircraft and spacecraft on the floor. Aviation and space are both in scope in every subtopic.",
-    "This day in aviation history carries a story kind the other topics do not: an anniversary, not news. Its candidates come from two daily columns, This Day in Aviation and Vintage Aviation News's Today In Aviation History, and from NASA History. A this-day story is significant for the event it records, and its date is the event's date; the summary says the year and what happened, and links the column's post.",
+    "This day in aviation history carries a story kind the other topics do not: an anniversary, not news. Its candidates come from two daily columns, This Day in Aviation and Vintage Aviation News's Today In Aviation History, read from their dated archives for the edition's date in earlier years, and from NASA History. A this-day story is significant for the event it records, and its date is the event's date; the summary says the year and what happened, and links the column's post.",
     "Every candidate is assigned to exactly one subtopic. An anniversary goes to This day, even when the aircraft is at the museum. News of the museum at either site, the National Mall building or the Udvar-Hazy Center in Chantilly, goes to The museum, whoever reports it. News of other museums, restorations, warbirds and airframes goes to Aviation heritage; an airframe on its way to the National Air and Space Museum goes to The museum.",
     "The museum has no feed of its own (2026-10-25: nine URL patterns on airandspace.si.edu return 404, the Smithsonian newsdesk returns 403, the events calendar sits behind a Cloudflare challenge). Its news reaches the paper through three Google News searches. Google News links are redirects that the page tool cannot follow; the coverage step searches for the headline and reads the publisher's own page, which is the link the story carries.",
     "Weights are all 1.0 at launch, as in the other topics.",
-    "Registered 2026-10-25 as definition v1 from the source research in the owner's working drive. The owner's decisions that day: space in scope; three subtopics; 3 to 5 this-day items when available; public, to show that a topic can serve a very small audience. The owner's father, the reader, is reviewing a summary of this definition; his comments will shape v2."
+    "Registered 2026-10-25 as definition v1 from the source research in the owner's working drive. The owner's decisions that day: space in scope; three subtopics; 3 to 5 this-day items when available; public, to show that a topic can serve a very small audience. The owner's father, the reader, is reviewing a summary of this definition; his comments will shape v2. v3 (2026-10-25, release v2.1.3): one run a day from 05:00 ET, and the anniversary sources read from the prior years' dated archives."
   ],
   "subtopic_scope_notes": {
-    "this-day": "Only events whose anniversary falls on the edition's date: month and day match, any year; an event spanning dates that include the edition's date (\"24–25 October 1944\") counts. A column post dated only the day before or the day after is out, including yesterday's column still inside a 48-hour window. Choose 3 to 5 when the sources offer them, and prefer variety across the edition: eras, civil and military, aviation and space, people and aircraft. Rank first an event involving an aircraft, spacecraft or person represented in the National Air and Space Museum's collection, then firsts and records, then the rest. Two columns marking the same event make one story, linked to the fuller post.",
+    "this-day": "Only events whose anniversary falls on the edition's date. Since v3 the candidates come from earlier years' dated archives, so a post's own publication date is the year it last ran, never the event's date; the date that matters is the one in the title or text: month and day match, any year; an event spanning dates that include the edition's date (\"24–25 October 1944\") counts. An event whose date is the day before or after is out. Choose 3 to 5 when the sources offer them, and prefer variety across the edition: eras, civil and military, aviation and space, people and aircraft. Rank first an event involving an aircraft, spacecraft or person represented in the National Air and Space Museum's collection, then firsts and records, then the rest. Two columns marking the same event make one story, linked to the fuller post.",
     "the-museum": "The National Air and Space Museum at both sites: aircraft, spacecraft and artifacts arriving, leaving or moving; exhibits and gallery openings and closures; public programs and events; curators' research and the museum's own editorial stories; restoration and conservation work at the Mary Baker Engen Restoration Hangar; leadership, staff, funding, attendance and Smithsonian decisions that change the museum. A new arrival or gallery change outranks a program listing; the museum's own story about an object outranks a second desk's report of the same thing.",
     "heritage": "Restorations, warbirds and historic aircraft flying or being returned to flight; other air and space museums' acquisitions and exhibits; famous airframes retiring, being preserved or changing hands; anniversaries marked by an event this week; and history writing of substance about aircraft, people and programs. United States first, notable international heritage when the story is significant. A restored aircraft's first flight outranks a museum's event listing."
   },
@@ -41,26 +61,48 @@
       "role": "agenda",
       "window_hours": 24,
       "feeds": [
-        { "name": "All", "url": "https://www.thisdayinaviation.com/feed/" }
+        {
+          "name": "Posts for this date, this year",
+          "url": "https://www.thisdayinaviation.com/{yyyy}/{mm}/{dd}/",
+          "page": true
+        },
+        {
+          "name": "Posts for this date, last year",
+          "url": "https://www.thisdayinaviation.com/{yyyy-1}/{mm}/{dd}/",
+          "page": true
+        }
       ],
-      "note": "Bryan Swopes's daily site: one or two long, sourced posts a day, each titled by the anniversary's date ('25 October 1994: The \"Dog Ship\"'). About ten a week; readable. The title's date is the event's date."
+      "note": "Bryan Swopes's daily site, read from its dated archive pages for the edition's date this year and last year (v3, 2026-10-25). The site republishes each post every year on its anniversary, and a republished post moves to its new date: a post not yet out this year is still on last year's page, a post already out is on this year's. The two pages together hold the date's posts, four to six of them, whenever the run happens (the posts go out between about 03:00 and 13:00 ET). Each item is a post titled by the event's date ('26 October 1962'); two posts can share a title. Readable."
     },
     {
       "publisher": "Vintage Aviation News",
       "role": "agenda",
       "window_hours": 24,
       "feeds": [
-        { "name": "Today In Aviation History", "url": "https://vintageaviationnews.com/category/today-in-aviation-history/feed" }
+        {
+          "name": "Posts this date, one year earlier",
+          "url": "https://vintageaviationnews.com/{yyyy-1}/{mm}/{dd}/feed/"
+        },
+        {
+          "name": "Posts this date, two years earlier",
+          "url": "https://vintageaviationnews.com/{yyyy-2}/{mm}/{dd}/feed/"
+        }
       ],
-      "note": "A daily anniversary column, written separately from This Day in Aviation; about seven a week; readable. The same posts appear in the publisher's main feed below, and the feed tool collapses exact duplicates."
+      "note": "The daily Today In Aviation History column, read from the site's dated archive feeds for the edition's date in the two prior years (v3), since the column posts at 09:00 ET, after the morning run. These feeds carry all of that day's posts; only the Today In Aviation History column is a this-day candidate, and the rest fall to the heritage subtopic or out. About one column a date, sometimes repeating an event across years."
     },
     {
       "publisher": "Google News",
       "role": "agenda",
       "window_hours": 48,
       "feeds": [
-        { "name": "National Air and Space Museum", "url": "https://news.google.com/rss/search?q=%22National+Air+and+Space+Museum%22&hl=en-US&gl=US&ceid=US:en" },
-        { "name": "Udvar-Hazy", "url": "https://news.google.com/rss/search?q=%22Udvar-Hazy%22&hl=en-US&gl=US&ceid=US:en" }
+        {
+          "name": "National Air and Space Museum",
+          "url": "https://news.google.com/rss/search?q=%22National+Air+and+Space+Museum%22&hl=en-US&gl=US&ceid=US:en"
+        },
+        {
+          "name": "Udvar-Hazy",
+          "url": "https://news.google.com/rss/search?q=%22Udvar-Hazy%22&hl=en-US&gl=US&ceid=US:en"
+        }
       ],
       "note": "Every desk that reports on the museum: in October 2026 WTOP, WJLA, the Washington Post, Air & Space Forces Magazine, AF.mil, LoudounNow, Fairfax County Times, Northern Virginia Magazine and Vintage Aviation News all covered the F-117 arrival. About 16 and 12 items a week, overlapping. Descriptions carry the headline and publisher only; the links are redirects the page tool cannot follow, so the coverage step searches for the headline."
     },
@@ -69,7 +111,10 @@
       "role": "agenda",
       "window_hours": 48,
       "feeds": [
-        { "name": "All", "url": "https://vintageaviationnews.com/feed" }
+        {
+          "name": "All",
+          "url": "https://vintageaviationnews.com/feed"
+        }
       ],
       "note": "The heritage desk: restorations, warbirds and museum news across the country, more than ten items a week; readable."
     },
@@ -78,7 +123,10 @@
       "role": "signal",
       "window_hours": 72,
       "feeds": [
-        { "name": "Site search via Google News", "url": "https://news.google.com/rss/search?q=site:airandspace.si.edu&hl=en-US&gl=US&ceid=US:en" }
+        {
+          "name": "Site search via Google News",
+          "url": "https://news.google.com/rss/search?q=site:airandspace.si.edu&hl=en-US&gl=US&ceid=US:en"
+        }
       ],
       "note": "The museum's own editorial stories and press releases, among many indexed pages that are not news (collection records, honoree entries, activities), which the deprioritize list names. About five useful items a week. The museum's story pages read in full."
     },
@@ -87,7 +135,10 @@
       "role": "signal",
       "window_hours": 336,
       "feeds": [
-        { "name": "All", "url": "https://www.nasa.gov/history/feed/" }
+        {
+          "name": "All",
+          "url": "https://www.nasa.gov/history/feed/"
+        }
       ],
       "note": "Space history, a few posts a month. Only a post whose anniversary falls on the edition's date is a this-day story; a longer history piece goes to Aviation heritage."
     },
@@ -96,7 +147,10 @@
       "role": "signal",
       "window_hours": 48,
       "feeds": [
-        { "name": "Latest", "url": "https://www.smithsonianmag.com/rss/latest_articles/" }
+        {
+          "name": "Latest",
+          "url": "https://www.smithsonianmag.com/rss/latest_articles/"
+        }
       ],
       "note": "Carries the museum's curators and air and space history among everything else the magazine publishes; most items are out of scope. Its Air & Space feed has been dead since 2021."
     },
@@ -105,7 +159,10 @@
       "role": "signal",
       "window_hours": 48,
       "feeds": [
-        { "name": "All", "url": "https://theaviationist.com/feed/" }
+        {
+          "name": "All",
+          "url": "https://theaviationist.com/feed/"
+        }
       ],
       "note": "Military aviation, about 15 items a week; mostly current operations, which the deprioritize list excludes. Useful for retiring airframes and aircraft headed to museums."
     },
@@ -114,14 +171,21 @@
       "role": "signal",
       "window_hours": 48,
       "feeds": [
-        { "name": "All", "url": "https://www.airandspaceforces.com/feed/" }
+        {
+          "name": "All",
+          "url": "https://www.airandspaceforces.com/feed/"
+        }
       ],
       "note": "Air Force history and aircraft retirements among policy coverage, which the deprioritize list excludes; it covered the F-117 delivery to the museum."
     }
   ],
   "coverage": {
     "search": "unconstrained",
-    "prefer": ["complete", "authoritative", "accessible"],
+    "prefer": [
+      "complete",
+      "authoritative",
+      "accessible"
+    ],
     "mark_subscriber_links": true,
     "discovery_per_subtopic": false,
     "discovery_note": "No web-search discovery, as in the other topics. The museum's news comes through Google News search feeds, whose links the coverage step resolves by searching the headline."
@@ -132,9 +196,11 @@
     "summary_rule": "original prose, written from coverage the agent read; no verbatim passages beyond a short attributed quote. Keep the specifics a docent would repeat to a visitor: the aircraft's designation, the date and year, the people, the record set, the number built. For a this-day story, open with the year.",
     "mark_thin_summaries": true
   },
-  "evolution": { "mode": "propose" },
+  "evolution": {
+    "mode": "propose"
+  },
   "source_roles": {
-    "agenda": "Sets what is significant today. Four sources: the two daily anniversary columns (This Day in Aviation; Vintage Aviation News, Today In Aviation History), the Google News searches for the museum, and Vintage Aviation News's main feed.",
+    "agenda": "Sets what is significant today. Four sources: the two daily anniversary columns, read from their dated archives (This Day in Aviation; Vintage Aviation News, Today In Aviation History), the Google News searches for the museum, and Vintage Aviation News's main feed.",
     "signal": "Corroborates and widens the aperture: the museum's own pages, NASA History, Smithsonian Magazine, The Aviationist and Air & Space Forces Magazine. Items are candidates like any other; a story only these feeds surfaced is the measure of what the agenda missed."
   }
 }
