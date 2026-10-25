@@ -14,7 +14,7 @@
   "category_notes": [
     "Two kinds of story run in every category: direct impacts (what happened, where, to whom, at what cost) and projections (what the models, the insurers, the agencies and the research expect). An edition should carry both kinds where the day offers them; a projection story is ranked on what it changes, not on its novelty.",
     "Every candidate is assigned to exactly one category. A storm's insured-loss estimate goes to Economics; the storm itself goes to Weather volatility; a drought declaration goes to Water; a study of future drought frequency goes to Water as a projection.",
-    "Weights are all 1.0 at launch, as in the general publication, so a later private view can reweight without changing the shape.",
+    "Weights are all 1.0 at launch, as in the general topic, so a later private view can reweight without changing the shape.",
     "Registered 2026-10-23 as definition v1 from the source research in the project folder; the owner's six decisions (roles, geography, Google News feeds, a page role, agriculture, cadence) were taken as defaults here and are open."
   ],
   "entities": [],
@@ -37,7 +37,7 @@
         { "name": "Climate crisis", "url": "https://www.theguardian.com/environment/climate-crisis/rss" },
         { "name": "Water", "url": "https://www.theguardian.com/environment/water/rss" }
       ],
-      "note": "Daily hard-news judgment on weather events and water worldwide; readable pages; long descriptions. The general publication reads the Guardian's World and US feeds, so repeats across publications are expected and the archive check handles them."
+      "note": "Daily hard-news judgment on weather events and water worldwide; readable pages; long descriptions. The general topic reads the Guardian's World and US feeds, so repeats across topics are expected and the archive check handles them."
     },
     {
       "publisher": "New York Times",
@@ -46,7 +46,7 @@
       "feeds": [
         { "name": "Climate", "url": "https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml" }
       ],
-      "note": "The strongest U.S. climate desk; pages unreadable, so its stories run headline-only or from other coverage, as in the general publication."
+      "note": "The strongest U.S. climate desk; pages unreadable, so its stories run headline-only or from other coverage, as in the general topic."
     },
     {
       "publisher": "Carbon Brief",
@@ -261,7 +261,7 @@
     "prefer": [ "complete", "authoritative", "accessible" ],
     "mark_subscriber_links": true,
     "discovery_per_category": false,
-    "discovery_note": "No web-search discovery, as in the general publication. Google News search feeds for restrictions and insurance were tested and left out at launch because their links cannot be read; see the source research."
+    "discovery_note": "No web-search discovery, as in the general topic. Google News search feeds for restrictions and insurance were tested and left out at launch because their links cannot be read; see the source research."
   },
   "editorial": {
     "two_axes": true,

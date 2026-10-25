@@ -2,7 +2,7 @@
 // Client for the hosted environment. The agent uses this instead of hand-building requests.
 //
 // Reads (no auth):
-//   node agent/tools/pp.mjs profile   <id>                      -> definition + version
+//   node agent/tools/pp.mjs topic     <id>                      -> definition + version
 //   node agent/tools/pp.mjs archive   <id> [--days 14]          -> recent stories
 //   node agent/tools/pp.mjs direction <id> [--unhandled]        -> direction entries
 //   node agent/tools/pp.mjs runs      <id>                      -> recent run logs
@@ -10,12 +10,12 @@
 //   node agent/tools/pp.mjs cuts      <id> <date>               -> the candidate record for an edition
 // Writes (auth: WRITE_TOKEN env var if set; otherwise none is sent, and the cloud environment's
 //         network secret is expected to add it):
-//   node agent/tools/pp.mjs run-open  <file.json>   {id, profile_id, profile_version, started_at}
+//   node agent/tools/pp.mjs run-open  <file.json>   {id, topic_id, topic_version, started_at}
 //   node agent/tools/pp.mjs run-close <id> <file.json>  {ended_at, status, log, cost_usd}
 //   node agent/tools/pp.mjs stories   <file.json>   {stories: [...]}
-//   node agent/tools/pp.mjs edition   <file.json>   {profile_id, date, run_id, today, body_md, closing}
+//   node agent/tools/pp.mjs edition   <file.json>   {topic_id, date, run_id, today, body_md, closing}
 //   node agent/tools/pp.mjs handled   <direction-id> <file.json>  {result}
-//   node agent/tools/pp.mjs put-profile <id> <file.json>  {definition, note}
+//   node agent/tools/pp.mjs put-topic <id> <file.json>  {definition, note}
 //   node agent/tools/pp.mjs candidates <file.json>  {candidates: [...]}   every candidate with its stage and reason
 //   node agent/tools/pp.mjs flag-handled <candidate-id> <file.json>  {result}
 //
@@ -57,7 +57,7 @@ async function call(method, path, body) {
 const load = (f) => JSON.parse(readFileSync(f, "utf8"));
 
 switch (cmd) {
-  case "profile":   await call("GET", `/registry/${a1}.json`); break;
+  case "topic":     await call("GET", `/registry/${a1}.json`); break;
   case "archive":   await call("GET", `/${a1}/archive.json?days=${opt("--days", "14")}`); break;
   case "direction": await call("GET", `/${a1}/direction.json${flag("--unhandled") ? "?unhandled=1" : ""}`); break;
   case "runs":      await call("GET", `/${a1}/runs.json`); break;
@@ -70,7 +70,7 @@ switch (cmd) {
   case "stories":   await call("POST", `/api/stories`, load(a1)); break;
   case "edition":   await call("POST", `/api/editions`, load(a1)); break;
   case "handled":   await call("POST", `/api/direction/${a1}/handled`, load(a2)); break;
-  case "put-profile": await call("POST", `/api/profiles/${a1}`, load(a2)); break;
+  case "put-topic": await call("POST", `/api/topics/${a1}`, load(a2)); break;
   default:
     console.error("unknown command; see the header of this file"); process.exit(2);
 }

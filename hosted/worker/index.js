@@ -34,7 +34,7 @@ export default {
         if (!ok) return json({ error: "unauthorized" }, 401);
         const body = await request.json().catch(() => null);
         if (!body) return json({ error: "body must be JSON" }, 400);
-        if (method === "POST" && (m = path.match(/^\/api\/profiles\/([a-z0-9-]+)$/))) return putProfile(env, m[1], body);
+        if (method === "POST" && (m = path.match(/^\/api\/topics\/([a-z0-9-]+)$/))) return putTopic(env, m[1], body);
         if (method === "POST" && path === "/api/runs") return postRun(env, body);
         if (method === "PATCH" && (m = path.match(/^\/api\/runs\/([^/]+)$/))) return patchRun(env, decodeURIComponent(m[1]), body);
         if (method === "POST" && path === "/api/stories") return postStories(env, body);
@@ -124,19 +124,19 @@ async function ownerLink(request, env, url) {
 async function registryIndex(env) {
   const { results } = await env.DB.prepare(
     `SELECT p.id, p.name, p.visibility, p.maintainer, p.description, p.current_version AS version, p.updated_at,
-            (SELECT MAX(date) FROM editions e WHERE e.profile_id = p.id) AS latest_edition,
-            (SELECT status FROM runs r WHERE r.profile_id = p.id ORDER BY started_at DESC LIMIT 1) AS last_run_status,
-            (SELECT started_at FROM runs r WHERE r.profile_id = p.id ORDER BY started_at DESC LIMIT 1) AS last_run_at
-     FROM profiles p WHERE p.visibility = 'public' ORDER BY p.name`
+            (SELECT MAX(date) FROM editions e WHERE e.topic_id = p.id) AS latest_edition,
+            (SELECT status FROM runs r WHERE r.topic_id = p.id ORDER BY started_at DESC LIMIT 1) AS last_run_status,
+            (SELECT started_at FROM runs r WHERE r.topic_id = p.id ORDER BY started_at DESC LIMIT 1) AS last_run_at
+     FROM topics p WHERE p.visibility = 'public' ORDER BY p.name`
   ).all();
-  return json({ profiles: results });
+  return json({ topics: results });
 }
 
 async function registryGet(env, id) {
   const row = await env.DB.prepare(
     `SELECT p.id, p.name, p.visibility, p.maintainer, p.description, p.current_version AS version,
             v.definition, v.created_at AS version_created_at
-     FROM profiles p JOIN profile_versions v ON v.profile_id = p.id AND v.version = p.current_version
+     FROM topics p JOIN topic_versions v ON v.topic_id = p.id AND v.version = p.current_version
      WHERE p.id = ? AND p.visibility = 'public'`
   ).bind(id).first();
   if (!row) return notFound();
@@ -149,9 +149,9 @@ async function registryGet(env, id) {
 
 async function registryVersions(env, id) {
   const { results } = await env.DB.prepare(
-    `SELECT v.version, v.note, v.created_at FROM profile_versions v
-     JOIN profiles p ON p.id = v.profile_id AND p.visibility = 'public'
-     WHERE v.profile_id = ? ORDER BY v.version DESC`
+    `SELECT v.version, v.note, v.created_at FROM topic_versions v
+     JOIN topics p ON p.id = v.topic_id AND p.visibility = 'public'
+     WHERE v.topic_id = ? ORDER BY v.version DESC`
   ).bind(id).all();
   if (!results.length) return notFound();
   return json({ id, versions: results });
@@ -161,36 +161,36 @@ async function registryVersions(env, id) {
 // Writes
 // ---------------------------------------------------------------------------
 
-async function putProfile(env, id, body) {
+async function putTopic(env, id, body) {
   const def = body.definition;
   if (!def || def.id !== id) return json({ error: "definition.id must match path" }, 400);
   const definition = JSON.stringify(def);
   const latest = await env.DB.prepare(
-    `SELECT version, definition FROM profile_versions WHERE profile_id = ? ORDER BY version DESC LIMIT 1`
+    `SELECT version, definition FROM topic_versions WHERE topic_id = ? ORDER BY version DESC LIMIT 1`
   ).bind(id).first();
   if (latest && latest.definition === definition) return json({ id, version: latest.version, changed: false });
   const version = (latest?.version || 0) + 1;
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO profiles (id, name, visibility, maintainer, description, current_version)
+      `INSERT INTO topics (id, name, visibility, maintainer, description, current_version)
        VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET name = excluded.name, visibility = excluded.visibility,
          maintainer = excluded.maintainer, description = excluded.description,
          current_version = excluded.current_version, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
     ).bind(id, def.name || id, def.visibility || "public", def.maintainer || null, def.description || "", version),
     env.DB.prepare(
-      `INSERT INTO profile_versions (profile_id, version, definition, note) VALUES (?, ?, ?, ?)`
+      `INSERT INTO topic_versions (topic_id, version, definition, note) VALUES (?, ?, ?, ?)`
     ).bind(id, version, definition, body.note || null),
   ]);
   return json({ id, version, changed: true }, 201);
 }
 
 async function postRun(env, b) {
-  for (const k of ["id", "profile_id", "profile_version", "started_at"]) if (b[k] == null) return json({ error: `missing ${k}` }, 400);
+  for (const k of ["id", "topic_id", "topic_version", "started_at"]) if (b[k] == null) return json({ error: `missing ${k}` }, 400);
   await env.DB.prepare(
-    `INSERT INTO runs (id, profile_id, profile_version, started_at, status) VALUES (?, ?, ?, ?, 'running')
+    `INSERT INTO runs (id, topic_id, topic_version, started_at, status) VALUES (?, ?, ?, ?, 'running')
      ON CONFLICT(id) DO UPDATE SET started_at = excluded.started_at`
-  ).bind(b.id, b.profile_id, b.profile_version, b.started_at).run();
+  ).bind(b.id, b.topic_id, b.topic_version, b.started_at).run();
   return json({ id: b.id }, 201);
 }
 
@@ -207,10 +207,10 @@ async function patchRun(env, id, b) {
 async function postStories(env, b) {
   const stories = Array.isArray(b.stories) ? b.stories : [];
   if (!stories.length) return json({ error: "stories[] required" }, 400);
-  const required = ["id", "profile_id", "run_id", "category", "headline", "url", "surfaced_by", "coverage", "newsworthiness", "relevance", "summary", "basis"];
+  const required = ["id", "topic_id", "run_id", "category", "headline", "url", "surfaced_by", "coverage", "newsworthiness", "relevance", "summary", "basis"];
   for (const s of stories) for (const k of required) if (s[k] == null) return json({ error: `story ${s.id || "?"} missing ${k}` }, 400);
   const stmt = env.DB.prepare(
-    `INSERT INTO stories (id, profile_id, run_id, category, headline, url, published_at, surfaced_by, coverage,
+    `INSERT INTO stories (id, topic_id, run_id, category, headline, url, published_at, surfaced_by, coverage,
        newsworthiness, relevance, summary, why_it_matters, basis, directed, related, image_url, image_credit)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET category = excluded.category, headline = excluded.headline, url = excluded.url,
@@ -220,7 +220,7 @@ async function postStories(env, b) {
        image_url = excluded.image_url, image_credit = excluded.image_credit`
   );
   const results = await env.DB.batch(stories.map((s) => stmt.bind(
-    s.id, s.profile_id, s.run_id, s.category, s.headline, s.url, s.published_at || null, s.surfaced_by,
+    s.id, s.topic_id, s.run_id, s.category, s.headline, s.url, s.published_at || null, s.surfaced_by,
     JSON.stringify(s.coverage), Number(s.newsworthiness), Number(s.relevance), s.summary, s.why_it_matters || null,
     s.basis, s.directed ? 1 : 0, s.related ? JSON.stringify(s.related) : null,
     s.image?.url || s.image_url || null, s.image?.credit || s.image_credit || null
@@ -230,19 +230,19 @@ async function postStories(env, b) {
 }
 
 async function postEdition(env, b) {
-  for (const k of ["profile_id", "date", "run_id", "body_md"]) if (b[k] == null) return json({ error: `missing ${k}` }, 400);
+  for (const k of ["topic_id", "date", "run_id", "body_md"]) if (b[k] == null) return json({ error: `missing ${k}` }, 400);
   await env.DB.prepare(
-    `INSERT INTO editions (profile_id, date, run_id, today, body_md, closing) VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(profile_id, date) DO UPDATE SET run_id = excluded.run_id, today = excluded.today,
+    `INSERT INTO editions (topic_id, date, run_id, today, body_md, closing) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(topic_id, date) DO UPDATE SET run_id = excluded.run_id, today = excluded.today,
        body_md = excluded.body_md, closing = excluded.closing, created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
-  ).bind(b.profile_id, b.date, b.run_id, b.today ? JSON.stringify(b.today) : null, b.body_md, b.closing || null).run();
-  return json({ profile_id: b.profile_id, date: b.date, url: `/${b.profile_id}/${b.date}` }, 201);
+  ).bind(b.topic_id, b.date, b.run_id, b.today ? JSON.stringify(b.today) : null, b.body_md, b.closing || null).run();
+  return json({ topic_id: b.topic_id, date: b.date, url: `/${b.topic_id}/${b.date}` }, 201);
 }
 
 async function postDirection(env, b) {
-  if (!b.profile_id || !b.action || !b.payload) return json({ error: "profile_id, action, payload required" }, 400);
-  const r = await env.DB.prepare(`INSERT INTO direction (profile_id, action, payload) VALUES (?, ?, ?)`)
-    .bind(b.profile_id, b.action, typeof b.payload === "string" ? b.payload : JSON.stringify(b.payload)).run();
+  if (!b.topic_id || !b.action || !b.payload) return json({ error: "topic_id, action, payload required" }, 400);
+  const r = await env.DB.prepare(`INSERT INTO direction (topic_id, action, payload) VALUES (?, ?, ?)`)
+    .bind(b.topic_id, b.action, typeof b.payload === "string" ? b.payload : JSON.stringify(b.payload)).run();
   return json({ id: r.meta.last_row_id }, 201);
 }
 
@@ -264,11 +264,11 @@ async function postCandidates(env, b) {
   const rows = Array.isArray(b.candidates) ? b.candidates : [];
   if (!rows.length) return json({ error: "candidates[] required" }, 400);
   for (const c of rows) {
-    for (const k of ["profile_id", "run_id", "ref", "title", "stage"]) if (c[k] == null) return json({ error: `candidate ${c.ref || "?"} missing ${k}` }, 400);
+    for (const k of ["topic_id", "run_id", "ref", "title", "stage"]) if (c[k] == null) return json({ error: `candidate ${c.ref || "?"} missing ${k}` }, 400);
     if (!STAGES.includes(c.stage)) return json({ error: `candidate ${c.ref} bad stage ${c.stage}` }, 400);
   }
   const stmt = env.DB.prepare(
-    `INSERT INTO candidates (profile_id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id)
+    `INSERT INTO candidates (topic_id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(run_id, ref) DO UPDATE SET title = excluded.title, url = excluded.url, source = excluded.source,
        published_at = excluded.published_at, category = excluded.category, stage = excluded.stage, reason = excluded.reason,
@@ -279,7 +279,7 @@ async function postCandidates(env, b) {
   for (let i = 0; i < rows.length; i += 50) {
     const chunk = rows.slice(i, i + 50);
     const res = await env.DB.batch(chunk.map((c) => stmt.bind(
-      c.profile_id, c.run_id, c.ref, c.title, c.url || null, c.source || null, c.published_at || null, c.category || null,
+      c.topic_id, c.run_id, c.ref, c.title, c.url || null, c.source || null, c.published_at || null, c.category || null,
       c.stage, c.reason || null, c.collapsed_into || null, c.story_id || null
     )));
     written += res.reduce((n, r) => n + (r.meta.changes || 0), 0);
@@ -306,37 +306,37 @@ async function flagHandled(env, id, b) {
   return json({ id, handled: true });
 }
 
-async function runIdsForDate(env, profile, date) {
-  const { results } = await env.DB.prepare(`SELECT id FROM runs WHERE profile_id = ? AND substr(started_at, 1, 10) = ? ORDER BY started_at`).bind(profile, date).all();
+async function runIdsForDate(env, topic, date) {
+  const { results } = await env.DB.prepare(`SELECT id FROM runs WHERE topic_id = ? AND substr(started_at, 1, 10) = ? ORDER BY started_at`).bind(topic, date).all();
   return results.map((r) => r.id);
 }
 function inList(ids) { return ids.map(() => "?").join(","); }
 
-async function cutsJson(env, profile, date) {
-  const runs = await runIdsForDate(env, profile, date);
+async function cutsJson(env, topic, date) {
+  const runs = await runIdsForDate(env, topic, date);
   if (!runs.length) return notFound();
   const { results } = await env.DB.prepare(
     `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note, flag_handled_at, flag_result
      FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY stage, category, id`
   ).bind(...runs).all();
-  return json({ profile, date, run_ids: runs, candidates: results });
+  return json({ topic, date, run_ids: runs, candidates: results });
 }
 
-async function flagsJson(env, profile, url) {
+async function flagsJson(env, topic, url) {
   const unhandled = url.searchParams.get("unhandled") === "1";
   const { results } = await env.DB.prepare(
     `SELECT c.id, c.run_id, c.ref, c.title, c.url, c.source, c.published_at, c.category, c.stage, c.reason, c.flagged_at, c.flag_note, c.flag_handled_at, c.flag_result,
             (SELECT date FROM editions e WHERE e.run_id = c.run_id) AS edition_date
-     FROM candidates c WHERE c.profile_id = ? AND c.flagged_at IS NOT NULL ${unhandled ? "AND c.flag_handled_at IS NULL" : ""}
+     FROM candidates c WHERE c.topic_id = ? AND c.flagged_at IS NOT NULL ${unhandled ? "AND c.flag_handled_at IS NULL" : ""}
      ORDER BY c.flagged_at DESC`
-  ).bind(profile).all();
-  return json({ profile, flags: results });
+  ).bind(topic).all();
+  return json({ topic, flags: results });
 }
 
-async function cutsPage(env, profile, date) {
-  const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+async function cutsPage(env, topic, date) {
+  const p = await env.DB.prepare(`SELECT id, name FROM topics WHERE id = ? AND visibility = 'public'`).bind(topic).first();
   if (!p) return notFound();
-  const runs = await runIdsForDate(env, profile, date);
+  const runs = await runIdsForDate(env, topic, date);
   if (!runs.length) return html(page(`${p.name} · cuts`, `<p class="meta"><a href="/${p.id}">latest</a></p><h1>No edition for ${esc(date)}</h1>`), 404);
   const { results } = await env.DB.prepare(
     `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note
@@ -406,29 +406,29 @@ async function cutsPage(env, profile, date) {
 // Public JSON reads
 // ---------------------------------------------------------------------------
 
-async function archiveJson(env, profile, url) {
+async function archiveJson(env, topic, url) {
   const days = Math.min(Math.max(Number(url.searchParams.get("days") || 14), 1), 365);
   const { results } = await env.DB.prepare(
-    `SELECT s.* FROM stories s JOIN profiles p ON p.id = s.profile_id AND p.visibility = 'public'
-     WHERE s.profile_id = ? AND s.created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)
+    `SELECT s.* FROM stories s JOIN topics p ON p.id = s.topic_id AND p.visibility = 'public'
+     WHERE s.topic_id = ? AND s.created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', ?)
      ORDER BY s.created_at DESC`
-  ).bind(profile, `-${days} days`).all();
-  return json({ profile, days, stories: results.map(parseStory) });
+  ).bind(topic, `-${days} days`).all();
+  return json({ topic, days, stories: results.map(parseStory) });
 }
 
-async function directionJson(env, profile, url) {
+async function directionJson(env, topic, url) {
   const unhandled = url.searchParams.get("unhandled") === "1";
   const { results } = await env.DB.prepare(
-    `SELECT * FROM direction WHERE profile_id = ? ${unhandled ? "AND handled_at IS NULL" : ""} ORDER BY created_at ASC`
-  ).bind(profile).all();
-  return json({ profile, direction: results });
+    `SELECT * FROM direction WHERE topic_id = ? ${unhandled ? "AND handled_at IS NULL" : ""} ORDER BY created_at ASC`
+  ).bind(topic).all();
+  return json({ topic, direction: results });
 }
 
-async function runsJson(env, profile) {
+async function runsJson(env, topic) {
   const { results } = await env.DB.prepare(
-    `SELECT id, profile_version, started_at, ended_at, status, cost_usd, log FROM runs WHERE profile_id = ? ORDER BY started_at DESC LIMIT 30`
-  ).bind(profile).all();
-  return json({ profile, runs: results.map((r) => ({ ...r, log: r.log ? JSON.parse(r.log) : null })) });
+    `SELECT id, topic_version, started_at, ended_at, status, cost_usd, log FROM runs WHERE topic_id = ? ORDER BY started_at DESC LIMIT 30`
+  ).bind(topic).all();
+  return json({ topic, runs: results.map((r) => ({ ...r, log: r.log ? JSON.parse(r.log) : null })) });
 }
 
 function parseStory(s) {
@@ -477,35 +477,35 @@ function aboutPage() {
 async function listingPage(env) {
   const { results } = await env.DB.prepare(
     `SELECT p.id, p.name, p.description, p.maintainer, p.current_version,
-            (SELECT MAX(date) FROM editions e WHERE e.profile_id = p.id) AS latest,
-            (SELECT status FROM runs r WHERE r.profile_id = p.id ORDER BY started_at DESC LIMIT 1) AS status,
-            (SELECT started_at FROM runs r WHERE r.profile_id = p.id ORDER BY started_at DESC LIMIT 1) AS last_run
-     FROM profiles p WHERE p.visibility = 'public' ORDER BY p.name`
+            (SELECT MAX(date) FROM editions e WHERE e.topic_id = p.id) AS latest,
+            (SELECT status FROM runs r WHERE r.topic_id = p.id ORDER BY started_at DESC LIMIT 1) AS status,
+            (SELECT started_at FROM runs r WHERE r.topic_id = p.id ORDER BY started_at DESC LIMIT 1) AS last_run
+     FROM topics p WHERE p.visibility = 'public' ORDER BY p.name`
   ).all();
   const items = results.map((p) => `
-    <li class="profile">
+    <li class="topic">
       <h2><a href="/${p.id}">${esc(p.name)}</a></h2>
       <p>${esc(p.description)}</p>
       <p class="meta">${p.latest ? `Latest edition <a href="/${p.id}/${p.latest}">${p.latest}</a>` : "No editions yet"}
         · ${p.status ? `last run ${esc(p.status)} at ${esc(p.last_run)}` : "no runs yet"}
         · definition v${p.current_version} · <a href="/${p.id}/archive">archive</a> · <a href="/registry/${p.id}.json">registry</a></p>
     </li>`).join("");
-  return html(page("PersonalPaper", `${siteHeader("home")}<p class="lede p">Public profiles and their daily editions.</p><ul class="profiles">${items || "<li>No public profiles.</li>"}</ul>`));
+  return html(page("PersonalPaper", `${siteHeader("home")}<p class="lede p">Public topics and their daily editions.</p><ul class="topics">${items || "<li>No public topics.</li>"}</ul>`));
 }
 
-async function editionPage(env, profile, date) {
-  const p = await env.DB.prepare(`SELECT id, name, current_version FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+async function editionPage(env, topic, date) {
+  const p = await env.DB.prepare(`SELECT id, name, current_version FROM topics WHERE id = ? AND visibility = 'public'`).bind(topic).first();
   if (!p) return notFound();
   const e = date
-    ? await env.DB.prepare(`SELECT * FROM editions WHERE profile_id = ? AND date = ?`).bind(profile, date).first()
-    : await env.DB.prepare(`SELECT * FROM editions WHERE profile_id = ? ORDER BY date DESC LIMIT 1`).bind(profile).first();
+    ? await env.DB.prepare(`SELECT * FROM editions WHERE topic_id = ? AND date = ?`).bind(topic, date).first()
+    : await env.DB.prepare(`SELECT * FROM editions WHERE topic_id = ? ORDER BY date DESC LIMIT 1`).bind(topic).first();
   if (!e) return html(page(p.name, `<p class="meta"><a href="/">PersonalPaper</a></p><h1>${esc(p.name)}</h1><p>No edition yet.</p>`), 404);
   const [nav, def, st] = await Promise.all([
-    env.DB.prepare(`SELECT (SELECT MAX(date) FROM editions WHERE profile_id = ?1 AND date < ?2) AS prev, (SELECT MIN(date) FROM editions WHERE profile_id = ?1 AND date > ?2) AS next`).bind(profile, e.date).first(),
-    env.DB.prepare(`SELECT definition FROM profile_versions WHERE profile_id = ? ORDER BY version DESC LIMIT 1`).bind(profile).first(),
+    env.DB.prepare(`SELECT (SELECT MAX(date) FROM editions WHERE topic_id = ?1 AND date < ?2) AS prev, (SELECT MIN(date) FROM editions WHERE topic_id = ?1 AND date > ?2) AS next`).bind(topic, e.date).first(),
+    env.DB.prepare(`SELECT definition FROM topic_versions WHERE topic_id = ? ORDER BY version DESC LIMIT 1`).bind(topic).first(),
     env.DB.prepare(`SELECT s.*, r.started_at AS run_started_at FROM stories s JOIN runs r ON r.id = s.run_id
-                    WHERE s.profile_id = ?1 AND substr(r.started_at, 1, 10) = ?2
-                    ORDER BY s.newsworthiness DESC, s.created_at ASC`).bind(profile, e.date).all(),
+                    WHERE s.topic_id = ?1 AND substr(r.started_at, 1, 10) = ?2
+                    ORDER BY s.newsworthiness DESC, s.created_at ASC`).bind(topic, e.date).all(),
   ]);
   const catName = Object.fromEntries(((safeJson(def?.definition) || {}).categories || []).map((c) => [c.id, c.name]));
   const stories = st.results.map(parseStory);
@@ -549,10 +549,10 @@ async function editionPage(env, profile, date) {
   }).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const navLinks = (withCuts) => [
-    nav.prev ? `<a href="/${profile}/${nav.prev}">← ${nav.prev}</a>` : "",
-    `<a href="/${profile}">latest</a>`,
-    nav.next ? `<a href="/${profile}/${nav.next}">${nav.next} →</a>` : "",
-    withCuts ? `<a href="/${profile}/${e.date}/cuts">cuts</a>` : "", `<a href="/${profile}/archive">archive</a>`, `<a href="/">all profiles</a>`,
+    nav.prev ? `<a href="/${topic}/${nav.prev}">← ${nav.prev}</a>` : "",
+    `<a href="/${topic}">latest</a>`,
+    nav.next ? `<a href="/${topic}/${nav.next}">${nav.next} →</a>` : "",
+    withCuts ? `<a href="/${topic}/${e.date}/cuts">cuts</a>` : "", `<a href="/${topic}/archive">archive</a>`, `<a href="/">all topics</a>`,
   ].filter(Boolean).join(" · ");
   const topLinks = navLinks(false), bottomLinks = navLinks(true);
   const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -560,8 +560,8 @@ async function editionPage(env, profile, date) {
   const share = {
     title: `${p.name} · ${longDate}`,
     description: topList.map((t, i) => `${i + 1}. ${t.headline || ""}`).join("  "),
-    url: `https://personalpaper.org/${profile}/${e.date}`,
-    image: `https://personalpaper.org/${profile}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
+    url: `https://personalpaper.org/${topic}/${e.date}`,
+    image: `https://personalpaper.org/${topic}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
   };
   return html(page(`${p.name} · ${e.date}`,
     `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark"><svg class="mark" viewBox="8 8 48 48" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>personal<b>paper</b></a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
@@ -569,13 +569,13 @@ async function editionPage(env, profile, date) {
 }
 
 // The share card: masthead, date, and the three top headlines drawn into a 1200x630 PNG.
-async function cardPng(request, env, profile, date) {
+async function cardPng(request, env, topic, date) {
   const cache = caches.default;
   const cached = await cache.match(request);
   if (cached) return cached;
-  const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+  const p = await env.DB.prepare(`SELECT id, name FROM topics WHERE id = ? AND visibility = 'public'`).bind(topic).first();
   if (!p) return notFound();
-  const e = await env.DB.prepare(`SELECT date, today FROM editions WHERE profile_id = ? AND date = ?`).bind(profile, date).first();
+  const e = await env.DB.prepare(`SELECT date, today FROM editions WHERE topic_id = ? AND date = ?`).bind(topic, date).first();
   if (!e) return notFound();
   const heads = (safeJson(e.today) || []).map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).slice(0, 3).map((h) => String(h).replace(/[<>&]/g, ""));
   const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -605,26 +605,26 @@ async function cardPng(request, env, profile, date) {
   return out;
 }
 
-async function archivePage(env, profile) {
-  const p = await env.DB.prepare(`SELECT id, name FROM profiles WHERE id = ? AND visibility = 'public'`).bind(profile).first();
+async function archivePage(env, topic) {
+  const p = await env.DB.prepare(`SELECT id, name FROM topics WHERE id = ? AND visibility = 'public'`).bind(topic).first();
   if (!p) return notFound();
   const { results } = await env.DB.prepare(
     `SELECT e.date, e.today, e.created_at, r.status,
-            (SELECT COUNT(*) FROM stories s JOIN runs r2 ON r2.id = s.run_id WHERE s.profile_id = e.profile_id AND substr(r2.started_at, 1, 10) = e.date) AS story_count
+            (SELECT COUNT(*) FROM stories s JOIN runs r2 ON r2.id = s.run_id WHERE s.topic_id = e.topic_id AND substr(r2.started_at, 1, 10) = e.date) AS story_count
      FROM editions e LEFT JOIN runs r ON r.id = e.run_id
-     WHERE e.profile_id = ? ORDER BY e.date DESC`
-  ).bind(profile).all();
+     WHERE e.topic_id = ? ORDER BY e.date DESC`
+  ).bind(topic).all();
   const items = results.map((e) => {
     const top = safeJson(e.today);
     const heads = Array.isArray(top) ? top.map((t) => esc(typeof t === "string" ? t : t.headline || "")).filter(Boolean) : [];
-    return `<li class="profile"><h2><a href="/${p.id}/${e.date}">${esc(e.date)}</a></h2>
+    return `<li class="topic"><h2><a href="/${p.id}/${e.date}">${esc(e.date)}</a></h2>
       <p class="meta">${e.story_count} stories${e.status ? ` · run ${esc(e.status)}` : ""}</p>
       ${heads.length ? `<ul class="heads">${heads.map((h) => `<li>${h}</li>`).join("")}</ul>` : ""}</li>`;
   }).join("");
   return html(page(`${p.name} · archive`,
-    `<p class="meta"><a href="/${p.id}">latest</a> · <a href="/">all profiles</a></p>
+    `<p class="meta"><a href="/${p.id}">latest</a> · <a href="/">all topics</a></p>
      <header class="masthead"><h1>${esc(p.name)}</h1><p class="date">Archive · ${results.length} edition${results.length === 1 ? "" : "s"}</p></header>
-     <ul class="profiles">${items || "<li>No editions yet.</li>"}</ul>`));
+     <ul class="topics">${items || "<li>No editions yet.</li>"}</ul>`));
 }
 
 // ---------------------------------------------------------------------------
@@ -680,7 +680,7 @@ details.story .body{padding:0 0 1rem}
 details.earlier{border-top:1px solid var(--line);margin-top:.2rem} details.earlier>summary{list-style:none;cursor:pointer;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:.55rem 0} details.earlier>summary::-webkit-details-marker{display:none} details.earlier>summary::before{content:"▸ ";} details.earlier[open]>summary::before{content:"▾ ";} details.earlier details.story{margin-left:.6rem} details.story .body p{margin:.35rem 0 .5rem} .why{color:var(--muted)}
 .more{margin-top:.6rem;padding-top:.5rem;border-top:1px solid var(--line)} .more-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .3rem!important} .more ul{list-style:none;margin:0;padding:0} .more li{margin:.25rem 0;font-size:15px;line-height:1.4} .more a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .closing{margin-top:2.5rem;border-top:1px solid var(--line);padding-top:.5rem;color:var(--muted);font-size:15px} .closing h2{color:var(--fg)}
-.lede.p{color:var(--muted)} .profiles{list-style:none;padding:0} .profile{border-top:1px solid var(--line);padding:1rem 0}
+.lede.p{color:var(--muted)} .topics{list-style:none;padding:0} .topic{border-top:1px solid var(--line);padding:1rem 0}
 .sitehead{display:flex;justify-content:space-between;align-items:center;gap:1rem} .sitehead .nav{margin:0} .brandlink{text-decoration:none}
 .prose{margin-top:1.4rem} .prose p,.prose li{margin:.6rem 0} .prose ol,.prose ul{padding-left:1.4rem} .prose a{color:var(--accent)}
 .heads{margin:.2rem 0 0;padding-left:1.2rem;color:var(--muted);font-size:.95rem}

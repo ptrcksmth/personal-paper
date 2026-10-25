@@ -17,9 +17,9 @@ PersonalPaper puts an editor between you and the firehose, and makes the editor 
 - **It remembers.** Every story is kept. Nothing runs twice unless there is a new fact.
 - **It shows its work.** Every edition has a cuts page: every candidate the editor considered, grouped by the stage it left at, with the reason. Flag what should have run. The editor reads the flags before its next run.
 - **It takes direction.** Tell it to look into something, to file a document, or to add an interest, and the next edition reflects it.
-- **It proposes, you decide.** The editor suggests changes to what it covers, with evidence. The profile changes only when its owner says so.
+- **It proposes, you decide.** The editor suggests changes to what it covers, with evidence. The topic changes only when its owner says so.
 
-A **profile** is a definition of what matters: categories, the publications that set the agenda, what to deprioritize, and the editorial rules. Public profiles live in a registry anyone can read. Private profiles, stacking several profiles into one personal view, and sign-in are the next releases.
+A **topic** is a definition of what matters: categories, the publications that set the agenda, what to deprioritize, and the editorial rules. The agent publishes an edition of each topic; a reader's paper is the topics they subscribe to. Public topics live in a registry anyone can read. Private topics, stacking several topics into one paper, and sign-in are the next releases.
 
 ## How it works
 
@@ -27,30 +27,30 @@ Three parts. The repository is the product; personalpaper.org is one deployment 
 
 | Part | What it is | Where |
 |---|---|---|
-| **Agent** | A user-delegated run of `agent/instructions.md`: pulls a profile from a registry, gathers the agenda, finds and reads coverage, edits, publishes, records every decision. Runs nightly. Holds no state between runs. | Any Claude Code session or routine, with the instructions as its prompt |
-| **Hosted environment** | Serves the profile registry, accepts the agent's outputs behind a token, stores stories, editions, run logs, candidate records and flags, and renders the pages. | One Cloudflare Worker with a D1 database: `hosted/` |
-| **Repository** | The instructions, the editorial standard, the tools, the environment's code, schema, and seed profile. Standalone: anyone can run the agent or deploy their own environment. | This repository, MIT |
+| **Agent** | A user-delegated run of `agent/instructions.md`: pulls a topic from a registry, gathers the agenda, finds and reads coverage, edits, publishes, records every decision. Runs nightly. Holds no state between runs. | Any Claude Code session or routine, with the instructions as its prompt |
+| **Hosted environment** | Serves the topic registry, accepts the agent's outputs behind a token, stores stories, editions, run logs, candidate records and flags, and renders the pages. | One Cloudflare Worker with a D1 database: `hosted/` |
+| **Repository** | The instructions, the editorial standard, the tools, the environment's code, schema, and the sample topics. Standalone: anyone can run the agent or deploy their own environment. | This repository, MIT |
 
-The nightly run, in order: orient (profile, the last fourteen days of stories, direction, flags), handle direction, gather the agenda feeds, aggregate (collapse duplicates, categorize, drop repeats and deprioritized items, shortlist), cover (search for and read the best coverage, in parallel), edit (score on two axes, select, write), reflect (proposals), publish, report. `docs/sysarch-diagrams.html` draws it; `docs/prds/v2.1-public-news-profile.md` specifies it.
+The nightly run, in order: orient (topic, the last fourteen days of stories, direction, flags), handle direction, gather the agenda feeds, aggregate (collapse duplicates, categorize, drop repeats and deprioritized items, shortlist), cover (search for and read the best coverage, in parallel), edit (score on two axes, select, write), reflect (proposals), publish, report. `docs/sysarch-diagrams.html` draws it; `docs/prds/v2.1-public-news-profile.md` specifies it.
 
-The two scores on every story are deliberate. **Newsworthiness** is the story's consequence on its own terms. **Relevance** is its fit to the profile. They are never folded together, so that a later view can reweight one without losing the other, which is what stacking a private profile over public ones will need.
+The two scores on every story are deliberate. **Newsworthiness** is the story's consequence on its own terms. **Relevance** is its fit to the topic. They are never folded together, so that a later view can reweight one without losing the other, which is what stacking a private topic over public ones will need.
 
 ## Use it
 
-**Read.** Open a profile at personalpaper.org. The profile's root is always the latest edition; dated editions and an archive sit beneath it; each edition has a cuts page. Share a link and the preview carries the day's top three headlines.
+**Read.** Open a topic at personalpaper.org. The topic's root is always the latest edition; dated editions and an archive sit beneath it; each edition has a cuts page. Share a link and the preview carries the day's top three headlines.
 
-**Run the agent yourself.** Clone this repository and, in a Claude Code session, say: *follow `agent/instructions.md` for the profile `global-us-news`*. The agent reads the registry at personalpaper.org, runs, and writes its outputs there if it has the write token, or to an environment of your own. A nightly schedule is a Claude Code routine with the same prompt.
+**Run the agent yourself.** Clone this repository and, in a Claude Code session, say: *follow `agent/instructions.md` for the topic `global-us-news`*. The agent reads the registry at personalpaper.org, runs, and writes its outputs there if it has the write token, or to an environment of your own. A nightly schedule is a Claude Code routine with the same prompt.
 
 ```bash
 npm install
 node agent/tools/fetch_feeds.mjs global-us-news        # the agenda, as the agent sees it
-node agent/tools/pp.mjs profile global-us-news         # the profile definition and version
+node agent/tools/pp.mjs topic global-us-news           # the topic definition and version
 node agent/tools/pp.mjs archive global-us-news         # the last fourteen days of stories
 ```
 
 **Deploy your own environment.** `hosted/deploy.md` walks through it: one database, one Worker, one command, on a free Cloudflare account. Point your agent's registry and output at it. A deployment of your own is private by construction if you keep its address to yourself.
 
-**Define a profile.** `hosted/seed/global-us-news.json` is the shape: categories with weights, agenda sources with feeds, a deprioritize list, coverage preferences, editorial rules, and an evolution mode. A contribution path for public profiles is planned; for now, deploy your own environment and seed it.
+**Define a topic.** `docs/defining-a-topic.md` is the process, and `hosted/topics/global-us-news.json` is the shape: categories with weights, agenda sources with feeds, a deprioritize list, coverage preferences, editorial rules, and an evolution mode. A contribution path for public topics is planned; for now, deploy your own environment and register yours.
 
 ## Repository
 
@@ -62,8 +62,10 @@ agent/
   tools/                  deterministic helpers: feed fetch, page fetch, environment client
 hosted/
   worker/index.js         the Cloudflare Worker: registry, write API, pages, share cards
-  schema.sql              the tables
-  seed/                   the sample profile and the seed builder
+  schema.sql              the tables, for a fresh database
+  migrations/             one-time changes to an existing database
+  topics/                 the sample topic definitions
+  seed/                   the seed builder and the seed it writes from topics/
   deploy.md               deploy, verify, develop locally
 docs/
   product-vision.md       what this is and why
@@ -73,7 +75,7 @@ docs/
 
 ## Status
 
-v2.1, the first release against the vision: one public profile, a nightly agent, a hosted environment at personalpaper.org, the cuts page, and owner flags. The first edition ran on 2026-10-17. Next: sign-in with flags per reader, private profiles, and stacking.
+v2.1, the first release against the vision, ran from 2026-10-17: a public topic, a nightly agent, a hosted environment at personalpaper.org, the cuts page, and owner flags. A second topic, climate physical risk, joined on 2026-10-23. v2.1.1 (2026-10-25) renamed the profile to the topic throughout. Next: sign-in with flags per reader, private topics, and stacking.
 
 PersonalPaper v1 (January to February 2026) was a Python pipeline that turned about seventy-five RSS feeds into a daily PDF through two LLM editorial passes. It ran for five weeks and is deprecated; `docs/product-vision.md` records what carried over.
 

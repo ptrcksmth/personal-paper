@@ -71,7 +71,7 @@
     }
   ],
   "category_notes": [
-    "Weights are all 1.0 at launch. They exist so that personal signals and a later private view can reweight them without changing the profile's shape.",
+    "Weights are all 1.0 at launch. They exist so that personal signals and a later private view can reweight them without changing the topic's shape.",
     "'The world this week' is read as agenda only; it is a digest, not a category.",
     "Every candidate, from any source, is assigned to exactly one category by the agent. NYT feeds map naturally: World to the regional categories, U.S. and Politics to United States, Business to Business or Finance and economics.",
     "WSJ feeds map: World to the regional categories or International, US Business to Business, Markets to Finance and economics."

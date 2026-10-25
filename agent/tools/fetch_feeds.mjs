@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Fetch a profile's agenda feeds and write the candidate list.
+// Fetch a topic's agenda feeds and write the candidate list.
 //
-// Usage: node agent/tools/fetch_feeds.mjs <profile-id> [--host https://personalpaper.org] [--out out/candidates.json]
+// Usage: node agent/tools/fetch_feeds.mjs <topic-id> [--host https://personalpaper.org] [--out out/candidates.json]
 //
-// Reads the profile definition from the hosted environment's registry, fetches every feed in
+// Reads the topic definition from the hosted environment's registry, fetches every feed in
 // agenda_sources, keeps items published within each source's window_hours, collapses exact
 // duplicates (same link, or same title) across feeds, and writes:
 //   out/candidates.json   items grouped by feed; duplicates carry duplicate_of; counts and failures
@@ -27,11 +27,11 @@ if ((process.env.HTTPS_PROXY || process.env.https_proxy) && !process.env.NODE_US
 import { dirname } from "node:path";
 
 const args = process.argv.slice(2);
-const profileId = args.find((a) => !a.startsWith("--"));
+const topicId = args.find((a) => !a.startsWith("--"));
 const opt = (name, dflt) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : dflt; };
 const host = (process.env.PP_HOST || opt("--host", "https://personalpaper.org")).replace(/\/$/, "");
 const out = opt("--out", "out/candidates.json");
-if (!profileId) { console.error("usage: fetch_feeds.mjs <profile-id> [--host H] [--out F]"); process.exit(2); }
+if (!topicId) { console.error("usage: fetch_feeds.mjs <topic-id> [--host H] [--out F]"); process.exit(2); }
 
 const UA = "PersonalPaper/2.1 (+https://personalpaper.org)";
 
@@ -79,10 +79,10 @@ async function fetchFeed(url) {
   } finally { clearTimeout(t); }
 }
 
-const reg = await fetch(`${host}/registry/${profileId}.json`, { headers: { "user-agent": UA } });
-if (!reg.ok) { console.error(`registry: HTTP ${reg.status} for ${profileId}`); process.exit(1); }
-const profile = await reg.json();
-const def = profile.definition;
+const reg = await fetch(`${host}/registry/${topicId}.json`, { headers: { "user-agent": UA } });
+if (!reg.ok) { console.error(`registry: HTTP ${reg.status} for ${topicId}`); process.exit(1); }
+const topic = await reg.json();
+const def = topic.definition;
 const now = Date.now();
 
 const feeds = [];
@@ -137,7 +137,7 @@ const collapsed = collapse(feeds);
 const unique = kept - collapsed;
 const perFeed = feeds.map((f) => ({ source: `${f.publisher} / ${f.feed}`, role: f.role, in_window: f.in_window || 0, duplicates: f.items.filter((i) => i.duplicate_of).length }));
 const result = {
-  profile: profileId, profile_version: profile.version, host, fetched_at: new Date(now).toISOString(),
+  topic: topicId, topic_version: topic.version, host, fetched_at: new Date(now).toISOString(),
   counts: { feeds: feeds.length, failed: failures.length, items_fetched: total, items_in_window: kept, collapsed, unique },
   per_feed: perFeed, failures, feeds,
 };
@@ -149,6 +149,6 @@ for (const f of feeds) for (const it of f.items) if (it.duplicate_of) collapsedL
   stage: "collapsed", reason: it.duplicate_reason, collapsed_into: it.duplicate_of,
 });
 writeFileSync(out.replace(/candidates\.json$/, "collapsed.json"), JSON.stringify({ collapsed: collapsedList }, null, 2));
-console.log(`${profileId} v${profile.version}: ${feeds.length} feeds, ${failures.length} failed, ${total} items fetched, ${kept} in window, ${collapsed} collapsed as duplicates, ${unique} unique -> ${out}`);
+console.log(`${topicId} v${topic.version}: ${feeds.length} feeds, ${failures.length} failed, ${total} items fetched, ${kept} in window, ${collapsed} collapsed as duplicates, ${unique} unique -> ${out}`);
 for (const pf of perFeed) console.log(`  ${pf.role.padEnd(6)} ${pf.source.padEnd(36)} in_window=${String(pf.in_window).padStart(3)} duplicates=${pf.duplicates}`);
 for (const f of failures) console.log(`  FAILED ${f.publisher} / ${f.feed}: ${f.error}`);

@@ -32,8 +32,8 @@ The certificate for a custom domain can take a few minutes after the first deplo
 ## Verify
 
 ```bash
-curl https://<host>/registry/index.json             # lists public profiles
-curl https://<host>/registry/global-us-news.json    # the sample profile, with its version
+curl https://<host>/registry/index.json             # lists public topics
+curl https://<host>/registry/global-us-news.json    # the sample topic, with its version
 curl -X POST https://<host>/api/runs                # 401 without the token
 ```
 
@@ -45,36 +45,53 @@ npm run db:local                                    # schema + seed into a local
 npm run dev                                         # http://127.0.0.1:8787
 ```
 
-`npx wrangler d1 execute personal-paper --local --command "select id, current_version from profiles"` queries the local database; add `--remote` for the deployed one.
+`npx wrangler d1 execute personal-paper --local --command "select id, current_version from topics"` queries the local database; add `--remote` for the deployed one.
+
+## Upgrading an existing database
+
+`hosted/schema.sql` describes a fresh database. A database created by an earlier release is brought forward by the files in `hosted/migrations/`, each applied once, in date order, local first:
+
+```bash
+npx wrangler d1 export personal-paper --remote --output backup.sql             # a copy first
+npx wrangler d1 execute personal-paper --local  --file hosted/migrations/<file>.sql
+npx wrangler d1 execute personal-paper --remote --file hosted/migrations/<file>.sql
+npx wrangler deploy                                                            # the code that expects the new shape
+```
+
+Deploy the Worker in the same minute as the remote migration, and outside the window of any scheduled run, so no run writes to a Worker that disagrees with its database.
+
+| Migration | Release | What it does |
+|---|---|---|
+| `2026-10-25-topic.sql` | v2.1.1 | renames `profiles` to `topics`, `profile_versions` to `topic_versions`, and `profile_id`, `profile_version` to `topic_id`, `topic_version` in every table; rows do not move |
 
 ## Routes
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
-| GET | `/registry/index.json` | no | public profiles with latest edition and last run status |
-| GET | `/registry/<id>.json` | no | a profile's current definition and version |
+| GET | `/registry/index.json` | no | public topics with latest edition and last run status |
+| GET | `/registry/<id>.json` | no | a topic's current definition and version |
 | GET | `/registry/<id>/versions` | no | version history |
-| POST | `/api/profiles/<id>` | yes | write a definition; creates a new version if it changed |
+| POST | `/api/topics/<id>` | yes | write a definition; creates a new version if it changed |
 | POST | `/api/runs` | yes | open a run |
 | PATCH | `/api/runs/<id>` | yes | close a run with status, log, cost |
 | POST | `/api/stories` | yes | insert stories (idempotent by id) |
 | POST | `/api/editions` | yes | write or replace the day's edition |
 | POST | `/api/direction` | yes | add a direction entry |
 | POST | `/api/direction/<id>/handled` | yes | mark it handled with a result |
-| GET | `/<profile>/archive.json?days=14` | no | recent stories, for repeat checks and stacking |
-| GET | `/<profile>/direction.json?unhandled=1` | no | direction entries |
-| GET | `/<profile>/runs.json` | no | recent run logs |
+| GET | `/<topic>/archive.json?days=14` | no | recent stories, for repeat checks and stacking |
+| GET | `/<topic>/direction.json?unhandled=1` | no | direction entries |
+| GET | `/<topic>/runs.json` | no | recent run logs |
 | POST | `/api/candidates` | yes | the candidate record for a run: every item with its stage and reason (idempotent by run and ref) |
 | POST | `/api/candidates/<id>/flag` | yes | the owner flags a candidate "should have run" (`{"flag": false}` clears it) |
 | POST | `/api/candidates/<id>/flag-handled` | yes | the agent records what it did with a flag |
-| GET | `/<profile>/flags.json?unhandled=1` | no | flagged candidates |
-| GET | `/<profile>/<date>/cuts.json` | no | the candidate record for an edition |
-| GET | `/`, `/<profile>`, `/<profile>/<date>`, `/<profile>/<date>/cuts`, `/<profile>/archive` | no | listing, latest edition, dated edition, the cuts page, archive index |
+| GET | `/<topic>/flags.json?unhandled=1` | no | flagged candidates |
+| GET | `/<topic>/<date>/cuts.json` | no | the candidate record for an edition |
+| GET | `/`, `/<topic>`, `/<topic>/<date>`, `/<topic>/<date>/cuts`, `/<topic>/archive` | no | listing, latest edition, dated edition, the cuts page, archive index |
 
 ## The cuts page and flags
 
-Every edition has a cuts page at `/<profile>/<date>/cuts`: every candidate the agent considered, grouped by the stage it left at, with the agent's one-line reason. The owner flags anything that should have run with one click. Flagging is authorized by an owner cookie: set a second secret, `OWNER_KEY`, and open `https://<host>/owner?k=<OWNER_KEY>` once on each device you flag from. That sets a one-year HttpOnly cookie; the key never appears in page links. Treat the link as a password; rotating the secret invalidates every device. The agent reads unhandled flags at the start of each run, runs a flagged item as a directed story if it is still current, and treats patterns in flags as evidence for profile proposals.
+Every edition has a cuts page at `/<topic>/<date>/cuts`: every candidate the agent considered, grouped by the stage it left at, with the agent's one-line reason. The owner flags anything that should have run with one click. Flagging is authorized by an owner cookie: set a second secret, `OWNER_KEY`, and open `https://<host>/owner?k=<OWNER_KEY>` once on each device you flag from. That sets a one-year HttpOnly cookie; the key never appears in page links. Treat the link as a password; rotating the secret invalidates every device. The agent reads unhandled flags at the start of each run, runs a flagged item as a directed story if it is still current, and treats patterns in flags as evidence for topic proposals.
 
-## Private profiles
+## Private topics
 
-Not in this release. A deployment of your own is private by construction if you keep its address to yourself; put Cloudflare Access in front of it if you want a login. Rows carry `owner` and `visibility` columns so a later release can add authenticated private profiles without a migration.
+Not in this release. A deployment of your own is private by construction if you keep its address to yourself; put Cloudflare Access in front of it if you want a login. Rows carry `owner` and `visibility` columns so a later release can add authenticated private topics without a migration.
