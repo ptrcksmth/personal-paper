@@ -2,7 +2,7 @@
 
 How to add a topic to a PersonalPaper deployment: from a stated scope to a registered definition the routine runs. Written 2026-10-23 from the second topic, `climate-physical-risk`, and the first, `global-us-news`, under the title "Defining a publication"; renamed 2026-10-25 in v2.1.1, when the system's "profile" and this guide's "publication" both became "topic" (`docs/prds/v2.1.1-topic.md`). Its categories became subtopics in v2.1.2 the same day (`docs/prds/v2.1.2-subtopic.md`).
 
-A topic is a JSON definition in the registry. Nothing else is needed: the agent reads every public definition in the registry index on each run, the Worker renders pages for any registered id, and the routine runs on its own schedule for all of them. Defining one is a research task and a writing task, with one POST at the end.
+A topic is a JSON definition in the registry. Nothing else is needed: the agent reads every public definition in the registry index on each run, the Worker renders pages for any registered id, and the routine runs on its own schedule for all of them. Defining one is a research task and a writing task, with one POST at the end, and an overview for its readers that is kept current from then on.
 
 ## 1. State the scope
 
@@ -94,10 +94,26 @@ The agent runs every topic in the index only when the run is not given a list, a
 
 To produce a first edition on demand, do not fire the whole routine: the edition table is keyed by topic and date, so a second run of an established topic the same day overwrites its edition with one built after the day's stories were dropped as repeats. Create a one-time routine on the same cloud environment instead, with the standard prompt amended to name the new topic only, and clear the connectors it attaches by default (the production routine runs with none).
 
-Read the first editions against three questions: did the deprioritize list hold (what noise got through, from which feed); did each subtopic carry what the scope notes asked for (both story kinds, the right emphasis); and what did the signal feeds surface that the agenda missed. The agent's proposals in each run's closing block answer some of this on their own. Each change is an edit to the JSON and a POST, producing the next version.
+Read the first editions against three questions: did the deprioritize list hold (what noise got through, from which feed); did each subtopic carry what the scope notes asked for (both story kinds, the right emphasis); and what did the signal feeds surface that the agenda missed. The agent's proposals in each run's closing block answer some of this on their own. Each change is an edit to the JSON and a POST, producing the next version, and the same session updates the topic's overview (section 7) to match.
 
 If the definition needs something the system does not have (a feed role for pages without feeds, a cadence of its own, search-based discovery, private visibility), that is a system change with its own PRD under `docs/prds/`, and the topic runs without it in the meantime.
 
-## 7. Record it
+## 7. Write the overview
 
-In the working drive: the project's tracker records the registration and version in Done, the defaults taken in the root tracker's SFL, and the owner's review as MTG items as they arise. The source research stays in the project folder until the project closes, when it graduates to a topical home. The definition itself lives in the repository and the registry, and is the plan of record for the topic.
+Every topic has an overview: a plain-language document, written for the topic's reader and any reviewer, that says what the paper is and why it carries what it does. The definition is written for the agent; the overview is its reading copy for people. Write it when the topic is registered, before the first edition if the reader is to review the scope, and update it in the same session as every new version of the definition. It was introduced on 2026-10-25 with the third topic, whose reader reviewed it by commenting line by line.
+
+It has seven sections, in this order:
+
+1. **What this is.** The paper, its reader, its address, its current definition version and the date of its first edition; how to give feedback.
+2. **What each day's paper carries.** A table of the subtopics: what belongs in each and how many stories.
+3. **Where the stories come from.** A table of the sources: role (lead for agenda, supporting for signal) and why each is there.
+4. **How the editor is told to choose.** The scope notes, the summary rule and the deprioritize list, rewritten in plain words.
+5. **What it cannot see yet.** The gaps from the source research and what would close each.
+6. **Decisions made so far.** A dated table, newest first, one row per decision or definition version.
+7. **Open questions.** The decisions still open for the owner or the reader, numbered.
+
+It uses the reader's words: lead and supporting for agenda and signal, section where a reader would say it, no field names. It lives outside the repository, as a shared document the reader can comment on (the owner's are Claude Docs); the working drive's map lists every overview's link.
+
+## 8. Record it
+
+In the working drive: the project's tracker records the registration and version in Done, the defaults taken in the root tracker's SFL, the owner's review as MTG items as they arise; the drive map, the overview's link. The source research stays in the project folder until the project closes, when it graduates to a topical home. The definition itself lives in the repository and the registry, and is the plan of record for the topic.
