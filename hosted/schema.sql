@@ -1,8 +1,8 @@
 -- PersonalPaper hosted environment: schema
 -- Cloudflare D1 (SQLite). Applied with: npx wrangler d1 execute personal-paper --file hosted/schema.sql
 --
--- Seven tables, per PRD section 8.2 of v2.1, renamed by v2.1.1 (profile became topic;
--- existing databases apply hosted/migrations/2026-10-25-topic.sql). `owner` and `visibility` exist from day one so that
+-- Seven tables, per PRD section 8.2 of v2.1, renamed by v2.1.1 (profile became topic) and v2.1.2 (category became
+-- subtopic); existing databases apply hosted/migrations/ in date order. `owner` and `visibility` exist from day one so that
 -- private rows in v2.2 need no migration; v2.1 never writes a private row.
 
 CREATE TABLE IF NOT EXISTS topics (
@@ -43,11 +43,11 @@ CREATE TABLE IF NOT EXISTS stories (
   id               TEXT PRIMARY KEY,            -- date plus slug
   topic_id         TEXT NOT NULL REFERENCES topics(id),
   run_id           TEXT NOT NULL REFERENCES runs(id),
-  category         TEXT NOT NULL,               -- exactly one category id from the topic
+  subtopic         TEXT NOT NULL,               -- exactly one subtopic id from the topic
   headline         TEXT NOT NULL,               -- the agent's headline
   url              TEXT NOT NULL,               -- the best coverage link
   published_at     TEXT,                        -- of the linked coverage
-  surfaced_by      TEXT NOT NULL,               -- agenda source + feed, or discovery:<category>
+  surfaced_by      TEXT NOT NULL,               -- agenda source + feed, or discovery:<subtopic>
   coverage         TEXT NOT NULL,               -- JSON array: {publisher, url, read_in_full, paywalled}
   newsworthiness   REAL NOT NULL,               -- 0..1
   relevance        REAL NOT NULL,               -- 0..1, kept separate so a merge can reweight
@@ -91,12 +91,12 @@ CREATE TABLE IF NOT EXISTS candidates (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   topic_id       TEXT NOT NULL REFERENCES topics(id),
   run_id         TEXT NOT NULL REFERENCES runs(id),
-  ref            TEXT NOT NULL,                 -- feed ref from fetch_feeds, or discovery:<category>:<n>
+  ref            TEXT NOT NULL,                 -- feed ref from fetch_feeds, or discovery:<subtopic>:<n>
   title          TEXT NOT NULL,
   url            TEXT,
   source         TEXT,                          -- "Publisher / Feed"
   published_at   TEXT,
-  category       TEXT,                          -- the category the agent assigned, if it got that far
+  subtopic       TEXT,                          -- the subtopic the agent assigned, if it got that far
   stage          TEXT NOT NULL CHECK (stage IN ('kept', 'not-kept', 'not-shortlisted', 'deprioritized', 'repeat', 'collapsed')),
   reason         TEXT,                          -- one line
   collapsed_into TEXT,                          -- ref of the candidate this one was merged into

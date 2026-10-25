@@ -64,7 +64,7 @@
 <header>
   <p class="eyebrow">PersonalPaper v2.1 · system architecture · 2026-10-17</p>
   <h1>Agent, hosted environment, repository</h1>
-  <p class="muted">Locked 2026-10-17; vocabulary updated 2026-10-25 (v2.1.1: what this page called a profile is now a topic, see docs/prds/v2.1.1-topic.md). Three parts. A user-delegated agent runs every night, pulls topics from hosted registries, and writes its outputs to a hosted environment. The hosted environment serves registry lists and the outputs of topic runs. The repository holds the agent instructions and the hosted environment's code, so anyone can run the agent or stand up their own environment. personalpaper.org is the default for both pulls and writes. Private topics are the next release. The PRD's section 8 is the canonical text; this page is its diagram.</p>
+  <p class="muted">Locked 2026-10-17; vocabulary updated 2026-10-25 (v2.1.1: what this page called a profile is now a topic, see docs/prds/v2.1.1-topic.md; v2.1.2: a category is now a subtopic, see docs/prds/v2.1.2-subtopic.md). Three parts. A user-delegated agent runs every night, pulls topics from hosted registries, and writes its outputs to a hosted environment. The hosted environment serves registry lists and the outputs of topic runs. The repository holds the agent instructions and the hosted environment's code, so anyone can run the agent or stand up their own environment. personalpaper.org is the default for both pulls and writes. Private topics are the next release. The PRD's section 8 is the canonical text; this page is its diagram.</p>
 </header>
 
 <h2>1. The three parts and what moves between them</h2>
@@ -172,7 +172,7 @@
 <p>The agent instructions execute in this order. Only steps 1 and 8 touch the hosted environment, and that is how the run log is organized.</p>
 <figure>
   <div class="scroll">
-  <svg viewBox="0 0 1000 330" role="img" aria-label="Nine steps in order: orient pulls the topic definition with its version, the direction inbox, and the last fourteen days of stories from the hosted environment; handle direction acts on inbox entries; gather fetches agenda feeds and runs per-category discovery searches; aggregate collapses duplicates, assigns categories, and drops repeats against the archive; cover searches for and reads the best coverage of each candidate; edit scores, selects two or three per category, and writes summaries; reflect writes topic proposals; publish writes stories, the edition, and the run log to the hosted environment; report marks any degraded source in the edition.">
+  <svg viewBox="0 0 1000 330" role="img" aria-label="Nine steps in order: orient pulls the topic definition with its version, the direction inbox, and the last fourteen days of stories from the hosted environment; handle direction acts on inbox entries; gather fetches agenda feeds and runs per-subtopic discovery searches; aggregate collapses duplicates, assigns subtopics, and drops repeats against the archive; cover searches for and reads the best coverage of each candidate; edit scores, selects two or three per subtopic, and writes summaries; reflect writes topic proposals; publish writes stories, the edition, and the run log to the hosted environment; report marks any degraded source in the edition.">
     <defs>
       <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
         <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -198,7 +198,7 @@
     <circle class="step" cx="438" cy="48" r="9"/><text x="438" y="52" text-anchor="middle" style="fill:#fff;font-size:11px">3</text>
     <text class="title" x="454" y="52">Gather</text>
     <text class="small" x="432" y="74">fetch 18 agenda feeds, 48h</text>
-    <text class="small" x="432" y="88">discovery search per category</text>
+    <text class="small" x="432" y="88">discovery search per subtopic</text>
     <text class="small" x="432" y="102">record counts + failures</text>
     <text class="small" x="432" y="116">nothing read yet</text>
 
@@ -206,7 +206,7 @@
     <circle class="step" cx="638" cy="48" r="9"/><text x="638" y="52" text-anchor="middle" style="fill:#fff;font-size:11px">4</text>
     <text class="title" x="654" y="52">Aggregate</text>
     <text class="small" x="632" y="74">collapse same-event items</text>
-    <text class="small" x="632" y="88">assign one category each</text>
+    <text class="small" x="632" y="88">assign one subtopic each</text>
     <text class="small" x="632" y="102">drop repeats vs archive</text>
     <text class="small" x="632" y="116">drop deprioritized</text>
 
@@ -228,7 +228,7 @@
     <circle class="step" cx="708" cy="208" r="9"/><text x="708" y="212" text-anchor="middle" style="fill:#fff;font-size:11px">6</text>
     <text class="title" x="724" y="212">Edit</text>
     <text class="small" x="702" y="234">score both axes separately</text>
-    <text class="small" x="702" y="248">top 2–3 per category</text>
+    <text class="small" x="702" y="248">top 2–3 per subtopic</text>
     <text class="small" x="702" y="262">summaries from coverage read</text>
     <text class="small" x="702" y="276">Opus orchestrator</text>
 
@@ -236,7 +236,7 @@
     <circle class="step" cx="488" cy="208" r="9"/><text x="488" y="212" text-anchor="middle" style="fill:#fff;font-size:11px">7</text>
     <text class="title" x="504" y="212">Reflect</text>
     <text class="small" x="482" y="234">proposals, not changes:</text>
-    <text class="small" x="482" y="248">empty or overflowing category,</text>
+    <text class="small" x="482" y="248">empty or overflowing subtopic,</text>
     <text class="small" x="482" y="262">failing feed, subject that</text>
     <text class="small" x="482" y="276">keeps earning its way in</text>
 
@@ -368,7 +368,7 @@
   <tbody>
     <tr><td class="k">topics</td><td>id, name, visibility, description, owner (unused in v2.1), current version</td><td>owner, admin path</td><td>agent, pages</td></tr>
     <tr><td class="k">topic_versions</td><td>full definition JSON per version, created at</td><td>owner, admin path</td><td>agent (records the version it ran)</td></tr>
-    <tr><td class="k">stories</td><td>one row per surfaced story: link, coverage, category, both scores, summary, basis, run id</td><td>agent, step 8</td><td>agent (step 1, repeats), pages, archive.json, stacking later</td></tr>
+    <tr><td class="k">stories</td><td>one row per surfaced story: link, coverage, subtopic, both scores, summary, basis, run id</td><td>agent, step 8</td><td>agent (step 1, repeats), pages, archive.json, stacking later</td></tr>
     <tr><td class="k">editions</td><td>one row per topic per day: rendered text, pointers, closing block</td><td>agent, step 8</td><td>pages, feed.xml</td></tr>
     <tr><td class="k">runs</td><td>run log: sources, counts, failures, cost, status, topic version</td><td>agent, step 8</td><td>owner, pages (status mark)</td></tr>
     <tr><td class="k">direction</td><td>owner instructions: action, payload, handled at, result pointer</td><td>owner (admin path), agent (marks handled)</td><td>agent, step 1</td></tr>

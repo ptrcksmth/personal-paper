@@ -63,6 +63,7 @@ Deploy the Worker in the same minute as the remote migration, and outside the wi
 | Migration | Release | What it does |
 |---|---|---|
 | `2026-10-25-topic.sql` | v2.1.1 | renames `profiles` to `topics`, `profile_versions` to `topic_versions`, and `profile_id`, `profile_version` to `topic_id`, `topic_version` in every table; rows do not move |
+| `2026-10-25-subtopic.sql` | v2.1.2 | renames `category` to `subtopic` in `stories` and `candidates`; rows do not move |
 
 ## Routes
 

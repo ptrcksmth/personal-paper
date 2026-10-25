@@ -5,15 +5,15 @@
   "maintainer": "Patrick",
   "description": "The physical risks of a changing climate as they land and as they are projected: weather volatility, water restrictions and limited availability, and the economics of both, from the climate desks, the water press, the reinsurance market and the research journals, summarized and linked.",
   "cadence": "runs with the shared routine, twice daily at 05:05 and 17:05 America/New_York; the later run is the edition for the day and earlier runs fold beneath it. Weekly sources carry longer windows so the research and attribution pieces stay in scope.",
-  "edition_size": "2 to 4 stories per category; a category with nothing significant is omitted",
-  "categories": [
+  "edition_size": "2 to 4 stories per subtopic; a subtopic with nothing significant is omitted",
+  "subtopics": [
     { "id": "weather-volatility", "name": "Weather volatility", "weight": 1.0, "max_stories": 4 },
     { "id": "water", "name": "Water", "weight": 1.0, "max_stories": 4 },
     { "id": "economics", "name": "Economics", "weight": 1.0, "max_stories": 4 }
   ],
-  "category_notes": [
-    "Two kinds of story run in every category: direct impacts (what happened, where, to whom, at what cost) and projections (what the models, the insurers, the agencies and the research expect). An edition should carry both kinds where the day offers them; a projection story is ranked on what it changes, not on its novelty.",
-    "Every candidate is assigned to exactly one category. A storm's insured-loss estimate goes to Economics; the storm itself goes to Weather volatility; a drought declaration goes to Water; a study of future drought frequency goes to Water as a projection.",
+  "subtopic_notes": [
+    "Two kinds of story run in every subtopic: direct impacts (what happened, where, to whom, at what cost) and projections (what the models, the insurers, the agencies and the research expect). An edition should carry both kinds where the day offers them; a projection story is ranked on what it changes, not on its novelty.",
+    "Every candidate is assigned to exactly one subtopic. A storm's insured-loss estimate goes to Economics; the storm itself goes to Weather volatility; a drought declaration goes to Water; a study of future drought frequency goes to Water as a projection.",
     "Weights are all 1.0 at launch, as in the general topic, so a later private view can reweight without changing the shape.",
     "Registered 2026-10-23 as definition v1 from the source research in the project folder; the owner's six decisions (roles, geography, Google News feeds, a page role, agriculture, cadence) were taken as defaults here and are open."
   ],
@@ -260,7 +260,7 @@
     "search": "unconstrained",
     "prefer": [ "complete", "authoritative", "accessible" ],
     "mark_subscriber_links": true,
-    "discovery_per_category": false,
+    "discovery_per_subtopic": false,
     "discovery_note": "No web-search discovery, as in the general topic. Google News search feeds for restrictions and insurance were tested and left out at launch because their links cannot be read; see the source research."
   },
   "editorial": {
@@ -272,7 +272,7 @@
   "evolution": {
     "mode": "propose"
   },
-  "category_scope_notes": {
+  "subtopic_scope_notes": {
     "weather-volatility": "Storms, heat, cold, flood, fire, and the swings between them, worldwide, with their tolls and records; and the projections: attribution studies, seasonal outlooks, the monthly climate reports, changes in frequency and intensity. The agencies that publish the outlooks (NOAA, Copernicus, the WMO) have no feeds, so their reports arrive through the desks that cover them.",
     "water": "Restrictions, rationing, allocations, shortages, aquifer and reservoir levels, snowpack, and the litigation and agreements that divide water, worldwide with the U.S. West in depth because that is where the reporting is; and the projections: basin forecasts, groundwater studies, availability under warming. A restriction or allocation decision outranks a report about one.",
     "economics": "What physical risk costs and who pays: insured and uninsured losses, insurer withdrawals and rate actions, reinsurance pricing and catastrophe bonds, crop and commodity effects, municipal and sovereign exposure; and the projections: catastrophe models, central-bank and research-institute work, loss reports from the reinsurers. Energy-transition finance is out of scope unless it prices physical risk."

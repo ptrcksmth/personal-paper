@@ -19,7 +19,7 @@ PersonalPaper puts an editor between you and the firehose, and makes the editor 
 - **It takes direction.** Tell it to look into something, to file a document, or to add an interest, and the next edition reflects it.
 - **It proposes, you decide.** The editor suggests changes to what it covers, with evidence. The topic changes only when its owner says so.
 
-A **topic** is a definition of what matters: categories, the publications that set the agenda, what to deprioritize, and the editorial rules. The agent publishes an edition of each topic; a reader's paper is the topics they subscribe to. Public topics live in a registry anyone can read. Private topics, stacking several topics into one paper, and sign-in are the next releases.
+A **topic** is a definition of what matters: subtopics, the publications that set the agenda, what to deprioritize, and the editorial rules. The agent publishes an edition of each topic; a reader's paper is the topics they subscribe to. Public topics live in a registry anyone can read. Private topics, stacking several topics into one paper, and sign-in are the next releases.
 
 ## How it works
 
@@ -31,7 +31,7 @@ Three parts. The repository is the product; personalpaper.org is one deployment 
 | **Hosted environment** | Serves the topic registry, accepts the agent's outputs behind a token, stores stories, editions, run logs, candidate records and flags, and renders the pages. | One Cloudflare Worker with a D1 database: `hosted/` |
 | **Repository** | The instructions, the editorial standard, the tools, the environment's code, schema, and the sample topics. Standalone: anyone can run the agent or deploy their own environment. | This repository, MIT |
 
-The nightly run, in order: orient (topic, the last fourteen days of stories, direction, flags), handle direction, gather the agenda feeds, aggregate (collapse duplicates, categorize, drop repeats and deprioritized items, shortlist), cover (search for and read the best coverage, in parallel), edit (score on two axes, select, write), reflect (proposals), publish, report. `docs/sysarch-diagrams.html` draws it; `docs/prds/v2.1-public-news-profile.md` specifies it.
+The nightly run, in order: orient (topic, the last fourteen days of stories, direction, flags), handle direction, gather the agenda feeds, aggregate (collapse duplicates, assign subtopics, drop repeats and deprioritized items, shortlist), cover (search for and read the best coverage, in parallel), edit (score on two axes, select, write), reflect (proposals), publish, report. `docs/sysarch-diagrams.html` draws it; `docs/prds/v2.1-public-news-profile.md` specifies it.
 
 The two scores on every story are deliberate. **Newsworthiness** is the story's consequence on its own terms. **Relevance** is its fit to the topic. They are never folded together, so that a later view can reweight one without losing the other, which is what stacking a private topic over public ones will need.
 
@@ -50,7 +50,7 @@ node agent/tools/pp.mjs archive global-us-news         # the last fourteen days 
 
 **Deploy your own environment.** `hosted/deploy.md` walks through it: one database, one Worker, one command, on a free Cloudflare account. Point your agent's registry and output at it. A deployment of your own is private by construction if you keep its address to yourself.
 
-**Define a topic.** `docs/defining-a-topic.md` is the process, and `hosted/topics/global-us-news.json` is the shape: categories with weights, agenda sources with feeds, a deprioritize list, coverage preferences, editorial rules, and an evolution mode. A contribution path for public topics is planned; for now, deploy your own environment and register yours.
+**Define a topic.** `docs/defining-a-topic.md` is the process, and `hosted/topics/global-us-news.json` is the shape: subtopics with weights, agenda sources with feeds, a deprioritize list, coverage preferences, editorial rules, and an evolution mode. A contribution path for public topics is planned; for now, deploy your own environment and register yours.
 
 ## Repository
 

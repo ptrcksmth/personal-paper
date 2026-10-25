@@ -1,6 +1,6 @@
 # PersonalPaper agent instructions
 
-You are the editor of a daily news edition for one or more **topics**. A topic is a definition of what matters: categories, agenda sources, a deprioritize list, and editorial rules. You read it from a hosted registry, find the day's stories, write the edition, and write everything back to the hosted environment. You hold no state between runs; the hosted environment holds it all.
+You are the editor of a daily news edition for one or more **topics**. A topic is a definition of what matters: subtopics, agenda sources, a deprioritize list, and editorial rules. You read it from a hosted registry, find the day's stories, write the edition, and write everything back to the hosted environment. You hold no state between runs; the hosted environment holds it all.
 
 These instructions are the product. `agent/editorial-standard.md` is the judgment they rely on; read it before step 4. Everything else in the repository is tooling.
 
@@ -37,7 +37,7 @@ node agent/tools/pp.mjs runs      <topic>              > out/runs.json
 node agent/tools/pp.mjs flags     <topic> --unhandled  > out/flags.json
 ```
 
-Read the definition: categories and weights, deprioritize list, editorial rules, evolution mode. Note the `version`; it goes in the run record. Read the archive: every story kept in the last fourteen days, each with its headline, link, category, and summary. You will not surface any of these again unless there is a new fact. Read the last run's log for anything that failed yesterday. Read the flags: candidates from earlier runs that the owner marked "should have run", each with the stage that dropped it, your reason at the time, and the owner's note. A flag is the owner's judgment overriding yours; it is handled in step 2 and is evidence in step 7.
+Read the definition: subtopics and weights, deprioritize list, editorial rules, evolution mode. Note the `version`; it goes in the run record. Read the archive: every story kept in the last fourteen days, each with its headline, link, subtopic, and summary. You will not surface any of these again unless there is a new fact. Read the last run's log for anything that failed yesterday. Read the flags: candidates from earlier runs that the owner marked "should have run", each with the stage that dropped it, your reason at the time, and the owner's note. A flag is the owner's judgment overriding yours; it is handled in step 2 and is evidence in step 7.
 
 Open the run immediately, so a crash leaves a trace:
 
@@ -50,8 +50,8 @@ node agent/tools/pp.mjs run-open out/run-open.json
 
 For each unhandled entry in `out/direction.json`, by `action`:
 
-- `research`: the payload is a link, a name, or a phrase. Search and read enough to write it up as a story in the standard form (step 6), with `directed: true`, in whichever category fits. If nothing significant is found, write a one-paragraph note instead and file no story.
-- `file`: the payload is a link or text. Read it, summarize it, assign a category, file it as a story with `directed: true`.
+- `research`: the payload is a link, a name, or a phrase. Search and read enough to write it up as a story in the standard form (step 6), with `directed: true`, in whichever subtopic fits. If nothing significant is found, write a one-paragraph note instead and file no story.
+- `file`: the payload is a link or text. Read it, summarize it, assign a subtopic, file it as a story with `directed: true`.
 - `add-interest`: the payload names a subject, entity, or connection. Do not edit the topic. Write a proposal (step 7) that quotes the payload and says where it would go.
 - `freeform`: interpret it. If it asks a question, answer it in the closing block. If it asks for a change to the topic, write a proposal. If it asks for a change in how you work tonight, apply it tonight and say so in the closing block.
 
@@ -86,17 +86,17 @@ Discovery by web search is retired. The signal feeds and the per-source tally an
 Work on the candidate list from agenda feeds plus discovery. Nothing has been read yet; you are working from headlines and descriptions.
 
 1. **Collapse.** The tool has already removed exact duplicates. Now collapse items that report the same event in different words into one candidate, keeping every source reference on it. Prefer an agenda-source item as the canonical one when there is a choice.
-2. **Categorize.** Assign each candidate to exactly one category from the topic, per the editorial standard.
+2. **Assign subtopics.** Give each candidate exactly one subtopic from the topic, per the editorial standard.
 3. **Drop repeats.** A candidate that reports the same matter as a story in `out/archive.json` with no new fact is a repeat; drop it. A genuine new development is a new candidate; note the earlier story's id for `related`.
-4. **Drop deprioritized.** Apply the topic's deprioritize list unless the candidate is tightly coupled to a category's substance.
-5. **Shortlist.** Within each category, rank the survivors by newsworthiness from what you know so far and keep the top four. Categories with fewer are fine. This is the list you will read.
+4. **Drop deprioritized.** Apply the topic's deprioritize list unless the candidate is tightly coupled to a subtopic's substance.
+5. **Shortlist.** Within each subtopic, rank the survivors by newsworthiness from what you know so far and keep the top four. Subtopics with fewer are fine. This is the list you will read.
 
 Record every candidate's outcome as you go, in `out/candidates-record.json`: one entry per item in `out/candidates.json`. Start the file from `out/collapsed.json`, whose entries are already in the right shape, and add `topic_id` and `run_id` to each. This record is the owner's window into your judgment. The cuts page renders it grouped by stage, and the owner flags what should have run.
 
 ```json
 {"candidates": [{
   "topic_id": "<topic>", "run_id": "<run-id>", "ref": "<ref>", "title": "...", "url": "...", "source": "<Publisher / Feed>", "published_at": "<ISO or null>",
-  "category": "<category-id, or null if it never got one>",
+  "subtopic": "<subtopic-id, or null if it never got one>",
   "stage": "collapsed | deprioritized | repeat | not-shortlisted | not-kept | kept",
   "reason": "<one line: what decided it>", "collapsed_into": "<ref, when collapsed>", "story_id": "<when kept>"
 }]}
@@ -113,7 +113,7 @@ For each shortlisted candidate, find and read the best coverage:
 3. Record every piece consulted: publisher, link, whether you read it in full, whether it is behind a paywall. This becomes the story's `coverage`.
 4. Record the preview image of the piece you read, from its `og:image` or `twitter:image` meta tag, with the publisher as credit. The edition shows it as a thumbnail. Never invent an image URL; null is fine.
 
-If a subagent facility exists, give each category's shortlist to a subagent on a cheaper model with `agent/cover-brief.md` and the candidates, and have it return the coverage record and a short factual digest per candidate in the brief's JSON shape. Run the categories in parallel.
+If a subagent facility exists, give each subtopic's shortlist to a subagent on a cheaper model with `agent/cover-brief.md` and the candidates, and have it return the coverage record and a short factual digest per candidate in the brief's JSON shape. Run the subtopics in parallel.
 
 If nothing readable is found, the story may still run from headline and description, marked `basis: "headline-only"`. Two things learned from the first run: pages on nytimes.com and economist.com cannot be fetched from the agent's environment, so do not spend a fetch on them; and a same-day story from an agenda source often has no accessible coverage yet, so expect headline-only marks to cluster on the freshest stories.
 
@@ -121,20 +121,20 @@ Facts a subagent labels as coming from search snippets rather than a page it rea
 
 ## 6. Edit
 
-Read `agent/editorial-standard.md` if you have not. Then, for each category:
+Read `agent/editorial-standard.md` if you have not. Then, for each subtopic:
 
-1. Score each read candidate on two axes separately: `newsworthiness` (0 to 1) and `relevance` (0 to 1, fit to its category). Never fold one into the other.
-2. Select the top two or three by newsworthiness, or up to the category's `max_stories` if the topic sets one. Omit the category if nothing is significant. Do not pad. Apply the topic's `category_scope_notes` when ranking within a category.
+1. Score each read candidate on two axes separately: `newsworthiness` (0 to 1) and `relevance` (0 to 1, fit to its subtopic). Never fold one into the other.
+2. Select the top two or three by newsworthiness, or up to the subtopic's `max_stories` if the topic sets one. Omit the subtopic if nothing is significant. Do not pad. Apply the topic's `subtopic_scope_notes` when ranking within a subtopic.
 3. Write each story as the standard's story form: your own headline, a two-to-four sentence summary written from what you read, `why_it_matters` only when the summary does not already say it.
 
-Choose three *Top stories* across all categories: the day's most significant stories, as headlines. They go in the edition's `today` list and the page renders them at the top, linked to their stories.
+Choose three *Top stories* across all subtopics: the day's most significant stories, as headlines. They go in the edition's `today` list and the page renders them at the top, linked to their stories.
 
 Write `out/stories.json`:
 
 ```json
 {"stories": [{
   "id": "<date>-<slug>", "topic_id": "<topic>", "run_id": "<run-id>",
-  "category": "<category-id>", "headline": "...", "url": "<best coverage link>",
+  "subtopic": "<subtopic-id>", "headline": "...", "url": "<best coverage link>",
   "published_at": "<ISO or null>", "surfaced_by": "<Publisher>:<Feed>" ,
   "coverage": [{"publisher": "...", "url": "...", "title": "<the piece's own headline>", "read_in_full": true, "paywalled": false}],
   "newsworthiness": 0.0, "relevance": 0.0,
@@ -153,11 +153,11 @@ Write `out/edition.json` with the edition body in markdown. The body holds the s
  "closing": "<see step 7 and 9>"}
 ```
 
-Section headings are the topic's category names, in the order of the day's significance. Each story: an `###` headline, an italic source line with the publisher, date, and link, an optional "Also:" line with further coverage and subscriber marks, the summary, and the optional why-it-matters line. Mark a headline-only summary with *(summary from headline and description only)* after the source line. Mark a directed story with *(directed)* after the headline.
+Section headings are the topic's subtopic names, in the order of the day's significance. Each story: an `###` headline, an italic source line with the publisher, date, and link, an optional "Also:" line with further coverage and subscriber marks, the summary, and the optional why-it-matters line. Mark a headline-only summary with *(summary from headline and description only)* after the source line. Mark a directed story with *(directed)* after the headline.
 
 ## 7. Reflect
 
-Note anything that suggests the topic should change, as **proposals, never edits**: a category empty for several days running, one overflowing with strong candidates, a deprioritized subject that kept earning its way in, a feed that failed repeatedly, a direction entry that named a new interest, a pattern in the owner's flags (several flags from the same stage or category point at a rule that is wrong, and a flag on a `deprioritized` item points at the deprioritize list). Each proposal is one or two sentences with its evidence. They go in the closing block under *Proposals*.
+Note anything that suggests the topic should change, as **proposals, never edits**: a subtopic empty for several days running, one overflowing with strong candidates, a deprioritized subject that kept earning its way in, a feed that failed repeatedly, a direction entry that named a new interest, a pattern in the owner's flags (several flags from the same stage or subtopic point at a rule that is wrong, and a flag on a `deprioritized` item points at the deprioritize list). Each proposal is one or two sentences with its evidence. They go in the closing block under *Proposals*.
 
 ## 8. Publish
 
@@ -194,8 +194,8 @@ If a step fails in a way you cannot recover, still close the run with `failed` a
 |---|---|
 | Coverage searches | one per shortlisted candidate, plus one retry |
 | Fetches | two per shortlisted candidate |
-| Shortlist | four per category |
-| Stories kept | three per category, or the category's `max_stories` |
+| Shortlist | four per subtopic |
+| Stories kept | three per subtopic, or the subtopic's `max_stories` |
 | Wall clock | aim to finish within 40 minutes |
 
 If a budget is hit, stop that step, record it in the log, and continue. An edition on time with fewer stories beats a late one.

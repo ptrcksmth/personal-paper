@@ -10,22 +10,22 @@ Signals that raise the score: a decision taken rather than discussed; a number t
 
 Score 0.9 and above for the handful of stories a year that reorder a region or a market. Score 0.6 to 0.8 for the day's clear leads. Score 0.3 to 0.5 for stories that belong in their section but would not lead it. Below 0.3, ask whether it should run at all.
 
-## Relevance to a category
+## Relevance to a subtopic
 
-Relevance is the fit between the story and its category's scope, scored separately from newsworthiness so that a later merge can reweight it. For a general-news topic it mostly confirms the assignment; a story squarely in its category scores near 1.0, a borderline one 0.5. When personal signals arrive, this is the axis they act on. Never fold one score into the other.
+Relevance is the fit between the story and its subtopic's scope, scored separately from newsworthiness so that a later merge can reweight it. For a general-news topic it mostly confirms the assignment; a story squarely in its subtopic scores near 1.0, a borderline one 0.5. When personal signals arrive, this is the axis they act on. Never fold one score into the other.
 
-## Assigning a category
+## Assigning a subtopic
 
-Exactly one category per story, the one whose readers would feel the story was missing if it were elsewhere.
+Exactly one subtopic per story, the one whose readers would feel the story was missing if it were elsewhere.
 
-- Geography wins over subject for regional categories: a European central bank decision goes to Europe unless its consequence is primarily global, in which case Finance and economics.
+- Geography wins over subject for regional subtopics: a European central bank decision goes to Europe unless its consequence is primarily global, in which case Finance and economics.
 - United States takes U.S. government, politics, courts, and domestic events of national consequence. A U.S. story whose consequence is mainly abroad goes to International.
 - Business takes companies and industries; Finance and economics takes markets, central banks, trade, and the macro picture.
-- Leaders is the Economist's opinion section. A leader runs only when the topic's deprioritize list does not exclude opinion and the leader itself is the day's talking point. Otherwise, use the leader as agenda signal for the underlying news and file the news in its own category.
+- Leaders is the Economist's opinion section. A leader runs only when the topic's deprioritize list does not exclude opinion and the leader itself is the day's talking point. Otherwise, use the leader as agenda signal for the underlying news and file the news in its own subtopic.
 - Briefing is for long explanatory pieces on one subject. Run one only when the subject is live that day.
 - Science and technology takes findings and developments with public consequence, not product announcements.
 
-When two categories fit equally, choose the one with fewer strong stories that day.
+When two subtopics fit equally, choose the one with fewer strong stories that day.
 
 ## Agenda and signal sources
 
@@ -65,11 +65,11 @@ Optional, one or two sentences, only when the summary does not already carry the
 
 ## Top stories
 
-Three stories across all categories that a reader with one minute should know about. Choose by newsworthiness alone. They are pointers to stories already in the sections, never extra stories.
+Three stories across all subtopics that a reader with one minute should know about. Choose by newsworthiness alone. They are pointers to stories already in the sections, never extra stories.
 
 ## Deprioritized subjects
 
-Apply the topic's list strictly, with one exception: a deprioritized subject that is tightly coupled to a category's substance runs in that category. Sports as a whole is deprioritized; a government banning a national team from competition is a story about the government. Celebrity as a whole is deprioritized; a celebrity's testimony that decides a landmark case is a story about the case.
+Apply the topic's list strictly, with one exception: a deprioritized subject that is tightly coupled to a subtopic's substance runs in that subtopic. Sports as a whole is deprioritized; a government banning a national team from competition is a story about the government. Celebrity as a whole is deprioritized; a celebrity's testimony that decides a landmark case is a story about the case.
 
 ## What the agent does not do
 

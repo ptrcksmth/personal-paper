@@ -207,20 +207,20 @@ async function patchRun(env, id, b) {
 async function postStories(env, b) {
   const stories = Array.isArray(b.stories) ? b.stories : [];
   if (!stories.length) return json({ error: "stories[] required" }, 400);
-  const required = ["id", "topic_id", "run_id", "category", "headline", "url", "surfaced_by", "coverage", "newsworthiness", "relevance", "summary", "basis"];
+  const required = ["id", "topic_id", "run_id", "subtopic", "headline", "url", "surfaced_by", "coverage", "newsworthiness", "relevance", "summary", "basis"];
   for (const s of stories) for (const k of required) if (s[k] == null) return json({ error: `story ${s.id || "?"} missing ${k}` }, 400);
   const stmt = env.DB.prepare(
-    `INSERT INTO stories (id, topic_id, run_id, category, headline, url, published_at, surfaced_by, coverage,
+    `INSERT INTO stories (id, topic_id, run_id, subtopic, headline, url, published_at, surfaced_by, coverage,
        newsworthiness, relevance, summary, why_it_matters, basis, directed, related, image_url, image_credit)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET category = excluded.category, headline = excluded.headline, url = excluded.url,
+     ON CONFLICT(id) DO UPDATE SET subtopic = excluded.subtopic, headline = excluded.headline, url = excluded.url,
        published_at = excluded.published_at, surfaced_by = excluded.surfaced_by, coverage = excluded.coverage,
        newsworthiness = excluded.newsworthiness, relevance = excluded.relevance, summary = excluded.summary,
        why_it_matters = excluded.why_it_matters, basis = excluded.basis, directed = excluded.directed, related = excluded.related,
        image_url = excluded.image_url, image_credit = excluded.image_credit`
   );
   const results = await env.DB.batch(stories.map((s) => stmt.bind(
-    s.id, s.topic_id, s.run_id, s.category, s.headline, s.url, s.published_at || null, s.surfaced_by,
+    s.id, s.topic_id, s.run_id, s.subtopic, s.headline, s.url, s.published_at || null, s.surfaced_by,
     JSON.stringify(s.coverage), Number(s.newsworthiness), Number(s.relevance), s.summary, s.why_it_matters || null,
     s.basis, s.directed ? 1 : 0, s.related ? JSON.stringify(s.related) : null,
     s.image?.url || s.image_url || null, s.image?.credit || s.image_credit || null
@@ -268,10 +268,10 @@ async function postCandidates(env, b) {
     if (!STAGES.includes(c.stage)) return json({ error: `candidate ${c.ref} bad stage ${c.stage}` }, 400);
   }
   const stmt = env.DB.prepare(
-    `INSERT INTO candidates (topic_id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id)
+    `INSERT INTO candidates (topic_id, run_id, ref, title, url, source, published_at, subtopic, stage, reason, collapsed_into, story_id)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(run_id, ref) DO UPDATE SET title = excluded.title, url = excluded.url, source = excluded.source,
-       published_at = excluded.published_at, category = excluded.category, stage = excluded.stage, reason = excluded.reason,
+       published_at = excluded.published_at, subtopic = excluded.subtopic, stage = excluded.stage, reason = excluded.reason,
        collapsed_into = excluded.collapsed_into, story_id = excluded.story_id`
   );
   // D1 batches are limited in size; chunk.
@@ -279,7 +279,7 @@ async function postCandidates(env, b) {
   for (let i = 0; i < rows.length; i += 50) {
     const chunk = rows.slice(i, i + 50);
     const res = await env.DB.batch(chunk.map((c) => stmt.bind(
-      c.topic_id, c.run_id, c.ref, c.title, c.url || null, c.source || null, c.published_at || null, c.category || null,
+      c.topic_id, c.run_id, c.ref, c.title, c.url || null, c.source || null, c.published_at || null, c.subtopic || null,
       c.stage, c.reason || null, c.collapsed_into || null, c.story_id || null
     )));
     written += res.reduce((n, r) => n + (r.meta.changes || 0), 0);
@@ -316,8 +316,8 @@ async function cutsJson(env, topic, date) {
   const runs = await runIdsForDate(env, topic, date);
   if (!runs.length) return notFound();
   const { results } = await env.DB.prepare(
-    `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note, flag_handled_at, flag_result
-     FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY stage, category, id`
+    `SELECT id, run_id, ref, title, url, source, published_at, subtopic, stage, reason, collapsed_into, story_id, flagged_at, flag_note, flag_handled_at, flag_result
+     FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY stage, subtopic, id`
   ).bind(...runs).all();
   return json({ topic, date, run_ids: runs, candidates: results });
 }
@@ -325,7 +325,7 @@ async function cutsJson(env, topic, date) {
 async function flagsJson(env, topic, url) {
   const unhandled = url.searchParams.get("unhandled") === "1";
   const { results } = await env.DB.prepare(
-    `SELECT c.id, c.run_id, c.ref, c.title, c.url, c.source, c.published_at, c.category, c.stage, c.reason, c.flagged_at, c.flag_note, c.flag_handled_at, c.flag_result,
+    `SELECT c.id, c.run_id, c.ref, c.title, c.url, c.source, c.published_at, c.subtopic, c.stage, c.reason, c.flagged_at, c.flag_note, c.flag_handled_at, c.flag_result,
             (SELECT date FROM editions e WHERE e.run_id = c.run_id) AS edition_date
      FROM candidates c WHERE c.topic_id = ? AND c.flagged_at IS NOT NULL ${unhandled ? "AND c.flag_handled_at IS NULL" : ""}
      ORDER BY c.flagged_at DESC`
@@ -339,8 +339,8 @@ async function cutsPage(env, topic, date) {
   const runs = await runIdsForDate(env, topic, date);
   if (!runs.length) return html(page(`${p.name} · cuts`, `<p class="meta"><a href="/${p.id}">latest</a></p><h1>No edition for ${esc(date)}</h1>`), 404);
   const { results } = await env.DB.prepare(
-    `SELECT id, run_id, ref, title, url, source, published_at, category, stage, reason, collapsed_into, story_id, flagged_at, flag_note
-     FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY category, id`
+    `SELECT id, run_id, ref, title, url, source, published_at, subtopic, stage, reason, collapsed_into, story_id, flagged_at, flag_note
+     FROM candidates WHERE run_id IN (${inList(runs)}) ORDER BY subtopic, id`
   ).bind(...runs).all();
   // Per-source tally: fetched, duplicates of another feed, kept, and kept with this source as the sole surfacer.
   const byRef = Object.fromEntries(results.map((c) => [c.ref, c]));
@@ -369,7 +369,7 @@ async function cutsPage(env, topic, date) {
   const groups = Object.fromEntries(order.map((s) => [s, results.filter((c) => c.stage === s)]));
   const row = (c) => `<li class="cut${c.flagged_at ? " flagged" : ""}" data-id="${c.id}">
       <div class="cut-main"><span class="cut-title">${c.url ? `<a href="${esc(c.url)}">${esc(c.title)}</a>` : esc(c.title)}</span>
-        <span class="meta">${esc(c.source || "")}${c.published_at ? ` · ${esc(String(c.published_at).slice(0, 10))}` : ""}${c.category ? ` · ${esc(c.category)}` : ""}</span>
+        <span class="meta">${esc(c.source || "")}${c.published_at ? ` · ${esc(String(c.published_at).slice(0, 10))}` : ""}${c.subtopic ? ` · ${esc(c.subtopic)}` : ""}</span>
         ${c.reason ? `<span class="reason">${esc(c.reason)}${c.collapsed_into ? ` (${esc(c.collapsed_into)})` : ""}</span>` : ""}</div>
       <button class="flag" type="button" aria-pressed="${c.flagged_at ? "true" : "false"}">${c.flagged_at ? "flagged" : "flag"}</button>
     </li>`;
@@ -507,18 +507,18 @@ async function editionPage(env, topic, date) {
                     WHERE s.topic_id = ?1 AND substr(r.started_at, 1, 10) = ?2
                     ORDER BY s.newsworthiness DESC, s.created_at ASC`).bind(topic, e.date).all(),
   ]);
-  const catName = Object.fromEntries(((safeJson(def?.definition) || {}).categories || []).map((c) => [c.id, c.name]));
+  const subtopicName = Object.fromEntries(((safeJson(def?.definition) || {}).subtopics || []).map((c) => [c.id, c.name]));
   const stories = st.results.map(parseStory);
   // The latest run is the edition; earlier runs the same day are history, shown collapsed per section.
   const latestRun = e.run_id;
   const isLatest = (s) => s.run_id === latestRun;
   const runCount = new Set(stories.map((s) => s.run_id)).size;
-  // Category order: as the agent ordered the markdown body (## headings), then any category it did not mention.
+  // Subtopic order: as the agent ordered the markdown body (## headings), then any subtopic it did not mention.
   const bodyOrder = [...String(e.body_md || "").matchAll(/^## (.+)$/gm)].map((m) => m[1].trim());
-  const nameToId = Object.fromEntries(Object.entries(catName).map(([id, n]) => [n, id]));
-  const catsInBody = bodyOrder.map((n) => nameToId[n]).filter(Boolean);
-  const allCats = [...new Set([...catsInBody, ...stories.map((s) => s.category)])];
-  const groups = allCats.map((id) => ({ id, name: catName[id] || id, stories: stories.filter((s) => s.category === id) })).filter((g) => g.stories.length);
+  const nameToId = Object.fromEntries(Object.entries(subtopicName).map(([id, n]) => [n, id]));
+  const subtopicsInBody = bodyOrder.map((n) => nameToId[n]).filter(Boolean);
+  const allSubtopics = [...new Set([...subtopicsInBody, ...stories.map((s) => s.subtopic)])];
+  const groups = allSubtopics.map((id) => ({ id, name: subtopicName[id] || id, stories: stories.filter((s) => s.subtopic === id) })).filter((g) => g.stories.length);
   const byId = Object.fromEntries(stories.map((s) => [s.id, s]));
   const firstSentence = (t) => { const m = String(t || "").match(/^.*?[.!?](?=\s|$)/); return m ? m[0] : String(t || ""); };
   const publisherOf = (s) => { const c = (s.coverage || []).find((x) => x.url === s.url); return (c?.publisher || s.surfaced_by || "").replace(/\s*\(via [^)]*\)/, ""); };
@@ -535,7 +535,7 @@ async function editionPage(env, topic, date) {
   const top = topList.length ? `<section class="top"><h2>Top stories</h2><ol>${topList.map((t) => {
       const s = t.story_id && byId[t.story_id] ? byId[t.story_id] : stories.find((x) => x.headline === t.headline);
       const h = esc(t.headline || s?.headline || "");
-      return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(catName[s.category] || s.category)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
+      return `<li>${s ? `<a href="#${sid(s)}">${h}</a><span class="kicker">${esc(subtopicName[s.subtopic] || s.subtopic)}</span><span class="lede">${esc(firstSentence(s.summary))}</span>` : h}</li>`;
     }).join("")}</ol></section>` : "";
   const storyHtml = (s) => `
       <details class="story" id="${sid(s)}"><summary class="${s.image_url ? "hasimg" : ""}">${s.image_url ? `<img src="${esc(s.image_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.classList.remove('hasimg');this.remove()">` : ""}<span class="h">${esc(s.headline)}</span><span class="l">${esc(firstSentence(s.summary))}</span></summary>
@@ -545,7 +545,7 @@ async function editionPage(env, topic, date) {
     const earlier = runCount > 1 ? g.stories.filter((s) => !isLatest(s)) : [];
     const countLabel = `${g.stories.length} ${g.stories.length === 1 ? "story" : "stories"}`;
     const earlierBlock = earlier.length ? `<details class="earlier"><summary>Earlier today <span class="count">${earlier.length}</span></summary>${earlier.map(storyHtml).join("")}</details>` : "";
-    return `<section class="cat-section"><h2 class="cat" id="cat-${g.id}"><span>${esc(g.name)}</span><span class="count">${countLabel}</span></h2>${now.map(storyHtml).join("")}${earlierBlock}</section>`;
+    return `<section class="subtopic-section"><h2 class="subtopic" id="subtopic-${g.id}"><span>${esc(g.name)}</span><span class="count">${countLabel}</span></h2>${now.map(storyHtml).join("")}${earlierBlock}</section>`;
   }).join("");
   const closing = e.closing ? `<section class="closing"><h2>From the desk</h2>${marked.parse(e.closing)}</section>` : "";
   const navLinks = (withCuts) => [
@@ -668,8 +668,8 @@ h2{font-size:1rem;margin:1.8rem 0 .4rem;font-weight:700}
 .top li::before{content:counter(top);position:absolute;left:0;top:.6rem;width:1.5rem;height:1.5rem;border-radius:50%;background:var(--fg);color:var(--bg);font-size:13px;font-weight:700;display:grid;place-items:center}
 .top li a{font-weight:700;text-decoration:none;line-height:1.3;display:block}
 .count{color:var(--muted);font-weight:400;font-size:13px}
-.cat-section{margin-top:2.4rem}
-h2.cat{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 .3rem;padding-top:.5rem;border-top:2px solid var(--fg);display:flex;justify-content:space-between;align-items:baseline}
+.subtopic-section{margin-top:2.4rem}
+h2.subtopic{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 .3rem;padding-top:.5rem;border-top:2px solid var(--fg);display:flex;justify-content:space-between;align-items:baseline}
 details.story{border-top:1px solid var(--line)} details.story:last-child{border-bottom:1px solid var(--line)}
 details.story summary{list-style:none;cursor:pointer;display:grid;gap:.15rem .8rem;padding:.7rem .2rem .7rem 0;align-items:start}
 details.story summary.hasimg{grid-template-columns:64px 1fr} details.story summary img{width:64px;height:64px;object-fit:cover;border-radius:6px;grid-row:1/span 2;background:var(--accent-soft)}

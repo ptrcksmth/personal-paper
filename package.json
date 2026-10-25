@@ -1,6 +1,6 @@
 {
   "name": "personal-paper",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "PersonalPaper: an agent that finds the news stories significant to a defined set of interests and delivers a daily edition. Agent instructions, hosted environment, schema.",
   "directories": {
     "doc": "docs"

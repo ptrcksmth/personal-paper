@@ -5,8 +5,8 @@
   "maintainer": "Patrick",
   "description": "The day's significant news, worldwide and in the United States, as surfaced by the New York Times, the Economist and the Wall Street Journal, organized by the Economist's sections, with the top two or three stories in each, summarized and linked.",
   "cadence": "twice daily, runs at 05:05 and 17:05 America/New_York (09:05 and 21:05 UTC in daylight time); the later run is the edition for the day and earlier runs fold beneath it",
-  "edition_size": "2 to 3 stories per category unless the category sets max_stories; a category with nothing significant is omitted",
-  "categories": [
+  "edition_size": "2 to 3 stories per subtopic unless the subtopic sets max_stories; a subtopic with nothing significant is omitted",
+  "subtopics": [
     {
       "id": "leaders",
       "name": "Leaders",
@@ -70,11 +70,11 @@
       "weight": 1.0
     }
   ],
-  "category_notes": [
+  "subtopic_notes": [
     "Weights are all 1.0 at launch. They exist so that personal signals and a later private view can reweight them without changing the topic's shape.",
-    "'The world this week' is read as agenda only; it is a digest, not a category.",
-    "Every candidate, from any source, is assigned to exactly one category by the agent. NYT feeds map naturally: World to the regional categories, U.S. and Politics to United States, Business to Business or Finance and economics.",
-    "WSJ feeds map: World to the regional categories or International, US Business to Business, Markets to Finance and economics."
+    "'The world this week' is read as agenda only; it is a digest, not a subtopic.",
+    "Every candidate, from any source, is assigned to exactly one subtopic by the agent. NYT feeds map naturally: World to the regional subtopics, U.S. and Politics to United States, Business to Business or Finance and economics.",
+    "WSJ feeds map: World to the regional subtopics or International, US Business to Business, Markets to Finance and economics."
   ],
   "entities": [],
   "deprioritize": [
@@ -275,7 +275,7 @@
           "url": "https://www.technologyreview.com/feed/"
         }
       ],
-      "note": "Added 2026-10-17 after the Science and technology category ran empty on a night when its only candidates were Economist analysis pieces. 72-hour window because these publish a few items a day."
+      "note": "Added 2026-10-17 after the Science and technology subtopic ran empty on a night when its only candidates were Economist analysis pieces. 72-hour window because these publish a few items a day."
     }
   ],
   "coverage": {
@@ -286,7 +286,7 @@
       "accessible"
     ],
     "mark_subscriber_links": true,
-    "discovery_per_category": false,
+    "discovery_per_subtopic": false,
     "discovery_note": "Retired 2026-10-18 in favour of signal feeds and the per-source tally on the cuts page."
   },
   "editorial": {
@@ -298,7 +298,7 @@
   "evolution": {
     "mode": "propose"
   },
-  "category_scope_notes": {
+  "subtopic_scope_notes": {
     "finance-and-economics": "Give room to the financing of the AI build-out: debt loads at AI infrastructure companies, bond and credit-default-swap moves, hyperscaler capital spending, and the market's exposure to it. Owner's standing interest, 2026-10-17.",
     "business": "Same emphasis as Finance and economics on the AI build-out and its risks, from the company side: capex, contracts, concentration, and who bears the losses if demand slows."
   },
