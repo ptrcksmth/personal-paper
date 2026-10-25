@@ -502,12 +502,13 @@ async function editionPage(env, topic, date) {
   if (!e) return html(page(p.name, `<p class="meta"><a href="/">PersonalPaper</a></p><h1>${esc(p.name)}</h1><p>No edition yet.</p>`), 404);
   const [nav, def, st] = await Promise.all([
     env.DB.prepare(`SELECT (SELECT MAX(date) FROM editions WHERE topic_id = ?1 AND date < ?2) AS prev, (SELECT MIN(date) FROM editions WHERE topic_id = ?1 AND date > ?2) AS next`).bind(topic, e.date).first(),
-    env.DB.prepare(`SELECT definition FROM topic_versions WHERE topic_id = ? ORDER BY version DESC LIMIT 1`).bind(topic).first(),
+    env.DB.prepare(`SELECT definition FROM topic_versions WHERE topic_id = ? ORDER BY version ASC`).bind(topic).all(),
     env.DB.prepare(`SELECT s.*, r.started_at AS run_started_at FROM stories s JOIN runs r ON r.id = s.run_id
                     WHERE s.topic_id = ?1 AND substr(r.started_at, 1, 10) = ?2
                     ORDER BY s.newsworthiness DESC, s.created_at ASC`).bind(topic, e.date).all(),
   ]);
-  const subtopicName = Object.fromEntries(((safeJson(def?.definition) || {}).subtopics || []).map((c) => [c.id, c.name]));
+  // Names from every version, the newest winning, so an edition filed under a retired subtopic keeps its heading.
+  const subtopicName = Object.assign({}, ...def.results.map((v) => Object.fromEntries(((safeJson(v.definition) || {}).subtopics || []).map((c) => [c.id, c.name]))));
   const stories = st.results.map(parseStory);
   // The latest run is the edition; earlier runs the same day are history, shown collapsed per section.
   const latestRun = e.run_id;
