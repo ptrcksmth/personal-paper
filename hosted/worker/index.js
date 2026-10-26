@@ -562,7 +562,7 @@ async function editionPage(env, topic, date) {
     title: `${p.name} · ${longDate}`,
     description: topList.map((t, i) => `${i + 1}. ${t.headline || ""}`).join("  "),
     url: `https://personalpaper.org/${topic}/${e.date}`,
-    image: `https://personalpaper.org/${topic}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}`,
+    image: `https://personalpaper.org/${topic}/${e.date}/card.png?v=${Date.parse(e.created_at) || 0}&c=3`,
   };
   return html(page(`${p.name} · ${e.date}`,
     `<div class="topbar"><p class="meta nav">${topLinks}</p><a href="/" class="wordmark"><svg class="mark" viewBox="8 8 48 48" aria-hidden="true"><rect x="8" y="8" width="48" height="6"/><rect x="8" y="19" width="13" height="37"/><rect x="25.5" y="19" width="13" height="37"/><rect x="43" y="19" width="13" height="21"/></svg>personal<b>paper</b></a></div><header class="masthead"><h1>${esc(p.name)}</h1><p class="date">${esc(longDate)}</p></header>
@@ -578,21 +578,25 @@ async function cardPng(request, env, topic, date) {
   if (!p) return notFound();
   const e = await env.DB.prepare(`SELECT date, today FROM editions WHERE topic_id = ? AND date = ?`).bind(topic, date).first();
   if (!e) return notFound();
-  const heads = (safeJson(e.today) || []).map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).slice(0, 3).map((h) => String(h).replace(/[<>&]/g, ""));
+  const heads = (safeJson(e.today) || []).map((t) => (typeof t === "string" ? t : t.headline || "")).filter(Boolean).slice(0, 3).map((h) => String(h).replace(/[<>]/g, ""));
   const longDate = new Date(e.date + "T00:00:00Z").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
-  const text = `personalpaper.org${p.name}${longDate}${heads.join("")}0123456789.,:;'’“”"-–—()&$%!?`;
+  // workers-og puts text into the font URL unencoded; an "&" (as in a topic's name) would cut the subset short.
+  const text = encodeURIComponent([...new Set(`personalpaper.org${p.name}${longDate}${heads.join("")}0123456789.,:;'’“”"-–—()&$%!?`)].join(""));
   const [bold, regular, slab] = await Promise.all([
     loadGoogleFont({ family: "Lexend", weight: 700, text }),
     loadGoogleFont({ family: "Lexend", weight: 400, text }),
     loadGoogleFont({ family: "Zilla Slab", weight: 700, text: "personalpaper" }),
   ]);
+  // The card's HTML parser leaves entities as written, so the name goes in raw; a long name puts the date beneath it.
+  const name = String(p.name).replace(/[<>]/g, "");
+  const longName = name.length > 32;
   const size = heads.reduce((n, h) => n + h.length, 0) > 190 ? 30 : 34;
   const item = (h, i) => `<div style="display:flex;align-items:flex-start;margin-top:18px">
       <div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:20px;background:#1e1c19;color:#f6f4ef;font-size:22px;font-weight:700;margin-right:18px;flex-shrink:0">${i + 1}</div>
       <div style="display:flex;font-size:${size}px;line-height:1.25;font-weight:700;color:#1e1c19">${h}</div></div>`;
   const html = `<div style="display:flex;flex-direction:column;width:1200px;height:630px;background:#f6f4ef;padding:52px 60px 44px;font-family:Lexend">
     <div style="display:flex;align-items:center;font-family:'Zilla Slab';font-size:28px;font-weight:700;color:#1e1c19;line-height:1"><div style="display:flex;position:relative;width:26px;height:26px;margin-right:8px;margin-bottom:1px"><div style="display:flex;position:absolute;left:0;top:0;width:26px;height:3.25px;background:#8a2a1b"></div><div style="display:flex;position:absolute;left:0;top:5.96px;width:7.04px;height:20.04px;background:#8a2a1b"></div><div style="display:flex;position:absolute;left:9.48px;top:5.96px;width:7.04px;height:20.04px;background:#8a2a1b"></div><div style="display:flex;position:absolute;left:18.96px;top:5.96px;width:7.04px;height:11.4px;background:#8a2a1b"></div></div><span>personal</span><span style="color:#8a2a1b">paper</span></div>
-    <div style="display:flex;align-items:baseline;margin-top:6px"><div style="display:flex;font-size:46px;font-weight:700;color:#1e1c19">${esc(p.name)}</div><div style="display:flex;font-size:24px;color:#6b665d;margin-left:22px;font-weight:400">${esc(longDate)}</div></div>
+    <div style="display:flex;flex-direction:${longName ? "column" : "row"};align-items:${longName ? "flex-start" : "baseline"};margin-top:6px"><div style="display:flex;font-size:${longName ? 42 : 46}px;font-weight:700;color:#1e1c19">${name}</div><div style="display:flex;font-size:24px;color:#6b665d;margin-left:${longName ? 0 : 22}px;margin-top:${longName ? 4 : 0}px;font-weight:400">${longDate}</div></div>
     <div style="display:flex;height:3px;background:#1e1c19;margin-top:16px"></div>
     <div style="display:flex;flex-direction:column;margin-top:12px">${heads.map(item).join("")}</div>
     <div style="display:flex;margin-top:auto;font-size:20px;color:#6b665d;font-weight:400">personalpaper.org</div>
