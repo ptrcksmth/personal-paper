@@ -65,14 +65,9 @@
           "name": "Posts for this date, this year",
           "url": "https://www.thisdayinaviation.com/{yyyy}/{mm}/{dd}/",
           "page": true
-        },
-        {
-          "name": "Posts for this date, last year",
-          "url": "https://www.thisdayinaviation.com/{yyyy-1}/{mm}/{dd}/",
-          "page": true
         }
       ],
-      "note": "Bryan Swopes's daily site, read from its dated archive pages for the edition's date this year and last year (v3, 2026-10-25). The site republishes each post every year on its anniversary, and a republished post moves to its new date: a post not yet out this year is still on last year's page, a post already out is on this year's. The two pages together hold the date's posts, four to six of them, whenever the run happens (the posts go out between about 03:00 and 13:00 ET). Each item is a post titled by the event's date ('26 October 1962'); two posts can share a title. Readable."
+      "note": "Bryan Swopes's daily site, read from its dated archive page for the edition's date this year. The site republishes each post every year on its anniversary and schedules the repost about the evening before; a scheduled post is hidden until it goes out, between about 03:00 and 13:00 ET, so a 05:05 run sees only the posts already out, often one or two. Last year's archive page was read in v3 and dropped in v4 (2026-10-26): the site's robots.txt disallows its year archives from /2020/ to /2025/. Each item is a post titled by the event's date ('26 October 1962'); two posts can share a title. Readable."
     },
     {
       "publisher": "Vintage Aviation News",
